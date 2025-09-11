@@ -1,0 +1,398 @@
+/* General Body and Font Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    background-color: #f4f6f9;
+    color: #333;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.highlight {
+    color: #4f46e5;
+}
+
+/* Navbar Styles */
+.navbar {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-brand {
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: #333;
+}
+
+.nav-links a {
+    color: #555;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: #4f46e5;
+}
+
+.btn-logout {
+    background-color: #e74c3c;
+    color: white !important;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.btn-logout:hover {
+    background-color: #c0392b;
+}
+
+/* Search Bar (User Panel) */
+.search-bar {
+    display: flex;
+    width: 50%;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px 0 0 8px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.search-bar button {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    background-color: #4f46e5;
+    color: white;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+/* Main Panel Content */
+main.container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.panel-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.panel-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.panel-header p {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+/* Table (Admin Panel) */
+.table-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Product Grid (User Panel) */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+.product-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.product-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.product-card h3 {
+    font-size: 1.2rem;
+    margin: 1rem 1rem 0.5rem 1rem;
+}
+
+.product-card .price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #4f46e5;
+    margin: 0 1rem 1rem 1rem;
+}
+
+.btn-view {
+    display: block;
+    background-color: #4f46e5;
+    color: white;
+    text-align: center;
+    padding: 0.8rem;
+    text-decoration: none;
+    font-weight: 600;
+    margin: 1rem;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.btn-view:hover {
+    background-color: #4338ca;
+}
+/* --- New Profile Page Styles --- */
+
+.profile-container {
+    background-color: #fff;
+    padding: 2rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 2rem auto; /* Centers the container */
+    text-align: center; /* Centers all text inside */
+}
+
+.profile-photo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid #e5e7eb;
+    margin-bottom: 1rem;
+}
+
+.profile-container h1 {
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.profile-detail {
+    font-size: 1.1rem;
+    color: #4b5563;
+    margin: 0.5rem 0;
+}
+
+/* --- Change Password Form --- */
+.change-password-form {
+    margin-top: 2.5rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 2rem;
+    text-align: left; /* Align form elements to the left */
+}
+
+.change-password-form h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.change-password-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.change-password-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.change-password-form input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.btn-form {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #4f46e5;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-form:hover {
+    background-color: #4338ca;
+}
+
+/* Message Styles (for success/error alerts) */
+.message {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* --- Styles for the New Product Details Page --- */
+
+.product-detail-container {
+    display: grid;
+    grid-template-columns: 1fr; /* Single column on mobile */
+    gap: 2rem;
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-top: 2rem;
+}
+
+/* Two-column layout for larger screens */
+@media (min-width: 768px) {
+    .product-detail-container {
+        grid-template-columns: 1fr 1.5fr; /* Image column is smaller */
+        padding: 3rem;
+    }
+}
+
+.product-info-column {
+    text-align: center;
+}
+
+.product-detail-image {
+    max-width: 250px; /* Controls the smaller image size */
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #eee;
+}
+
+.product-info-column h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+}
+
+.product-detail-description {
+    font-size: 1rem;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.store-offers-column h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #f3f4f6;
+    padding-bottom: 0.75rem;
+}
+
+.store-offers-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.store-offer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.store-offer:not(:last-child) {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.store-offer:hover {
+    background-color: #fafafa;
+}
+
+.store-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.store-price {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #16a34a; /* Green for price */
+}
+
+.btn-store {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 500;
+    text-decoration: none;
+    transition: opacity 0.3s;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-store:hover {
+    opacity: 0.9;
+}
+
+/* --- Store Specific Button Colors --- */
+/* The default color is set in .btn-store, these will override it */
+.btn-amazon { background-color: #FF9900; }
+.btn-flipkart { background-color: #2874F0; }
+.btn-croma { background-color: #00A14B; }
+

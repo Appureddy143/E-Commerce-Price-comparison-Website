@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BudgetBuy - Find the Best Deals</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading-spinner {
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .logo-bounce {
+            animation: logoBounce 2s ease-in-out infinite;
+        }
+        @keyframes logoBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-up {
+            animation: slideUp 0.8s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .search-glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+        .search-glow:focus {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+            transform: scale(1.02);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .pulse-ring {
+            animation: pulseRing 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+        @keyframes pulseRing {
+            0% { transform: scale(0.8); opacity: 1; }
+            80%, 100% { transform: scale(1.2); opacity: 0; }
+        }
+        
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .modal-enter {
+            animation: modalEnter 0.3s ease-out;
+        }
+        @keyframes modalEnter {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .price-highlight {
+            animation: priceGlow 2s ease-in-out infinite;
+        }
+        @keyframes priceGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(34, 197, 94, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+        }
+        
+        .store-logo {
+            animation: storeBounce 2s ease-in-out infinite;
+        }
+        @keyframes storeBounce {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            50% { transform: scale(1.2) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-2deg); }
+        }
+        
+        .best-deal-badge {
+            animation: badgePulse 1.5s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(34, 197, 94, 0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+        }
+
+        .heart-bounce {
+            animation: heartBounce 0.3s ease-in-out;
+        }
+        @keyframes heartBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .page-transition {
+            animation: pageSlide 0.5s ease-out;
+        }
+        @keyframes pageSlide {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .category-hover {
+            transition: all 0.3s ease;
+        }
+        .category-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .chart-bar-grow {
+            animation: chartBarGrow 1s ease-out forwards;
+        }
+        @keyframes chartBarGrow {
+            from { height: 0; }
+            to { height: var(--bar-height); }
+        }
+
+        .shimmer {
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .line-draw {
+            animation: lineDraw 2s ease-out forwards;
+        }
+        @keyframes lineDraw {
+            from { stroke-dashoffset: 1000; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        .point-pop {
+            animation: pointPop 0.6s ease-out forwards;
+        }
+        @keyframes pointPop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* SPECTACULAR CINEMATIC ENTRY ANIMATION */
+        .website-entry {
+            animation: cinematicReveal 2.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            opacity: 0;
+            transform: perspective(1000px) rotateX(45deg) translateY(100px) scale(0.8);
+            filter: blur(20px) brightness(0.3);
+        }
+        
+        @keyframes cinematicReveal {
+            0% { 
+                opacity: 0; 
+                transform: perspective(1000px) rotateX(45deg) translateY(100px) scale(0.8);
+                filter: blur(20px) brightness(0.3);
+                box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+            }
+            25% {
+                opacity: 0.3;
+                transform: perspective(1000px) rotateX(25deg) translateY(50px) scale(0.9);
+                filter: blur(10px) brightness(0.6);
+                box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+            }
+            50% {
+                opacity: 0.6;
+                transform: perspective(1000px) rotateX(10deg) translateY(20px) scale(0.95);
+                filter: blur(5px) brightness(0.8);
+                box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            }
+            75% {
+                opacity: 0.9;
+                transform: perspective(1000px) rotateX(-2deg) translateY(-10px) scale(1.02);
+                filter: blur(2px) brightness(1.1);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            }
+            100% { 
+                opacity: 1; 
+                transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1);
+                filter: blur(0px) brightness(1);
+                box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            }
+        }
+
+        /* PARTICLE BURST EFFECT */
+        .particle-burst {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, #3b82f6, #8b5cf6, #ec4899);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .particle-1 { animation: particleBurst1 2s ease-out forwards; }
+        .particle-2 { animation: particleBurst2 2s ease-out forwards; }
+        .particle-3 { animation: particleBurst3 2s ease-out forwards; }
+        .particle-4 { animation: particleBurst4 2s ease-out forwards; }
+        .particle-5 { animation: particleBurst5 2s ease-out forwards; }
+        .particle-6 { animation: particleBurst6 2s ease-out forwards; }
+        .particle-7 { animation: particleBurst7 2s ease-out forwards; }
+        .particle-8 { animation: particleBurst8 2s ease-out forwards; }
+
+        @keyframes particleBurst1 {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-150px, -200px) scale(0) rotate(360deg); opacity: 0; }
+        }
+        @keyframes particleBurst2 {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(150px, -200px) scale(0) rotate(-360deg); opacity: 0; }
+        }
+        @keyframes particleBurst3 {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-200px, 0px) scale(0) rotate(180deg); opacity: 0; }
+        }
+        @keyframes particleBurst4 {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(200px, 0px) scale(0) rotate(-180deg); opacity: 0; }
+        }
+        @keyframes particleBurst5 {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-150px, 200px) scale(0) rotate(270deg); opacity: 0; }
+        }
+        @keyframes particleBurst6 {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(150px, 200px) scale(0) rotate(-270deg); opacity: 0; }
+        }
+        @keyframes particleBurst7 {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-100px, -100px) scale(0) rotate(45deg); opacity: 0; }
+        }
+        @keyframes particleBurst8 {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(100px, 100px) scale(0) rotate(-45deg); opacity: 0; }
+        }
+
+        /* STAGGERED DRAMATIC ENTRY FOR DIFFERENT SECTIONS */
+        .entry-delay-1 {
+            animation: dramaticSlideIn 1.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            animation-delay: 0.5s;
+            opacity: 0;
+            transform: translateX(-100px) rotateY(-30deg);
+        }
+        .entry-delay-2 {
+            animation: dramaticSlideIn 1.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            animation-delay: 1s;
+            opacity: 0;
+            transform: translateX(100px) rotateY(30deg);
+        }
+        .entry-delay-3 {
+            animation: dramaticSlideIn 1.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            animation-delay: 1.5s;
+            opacity: 0;
+            transform: translateY(80px) scale(0.7);
+        }
+
+        @keyframes dramaticSlideIn {
+            0% { 
+                opacity: 0; 
+                transform: translateX(var(--slide-x, 0)) translateY(var(--slide-y, 0)) rotateY(var(--rotate-y, 0)) scale(var(--scale, 1));
+                filter: blur(15px);
+            }
+            50% {
+                opacity: 0.7;
+                transform: translateX(calc(var(--slide-x, 0) * 0.2)) translateY(calc(var(--slide-y, 0) * 0.2)) rotateY(calc(var(--rotate-y, 0) * 0.3)) scale(1.05);
+                filter: blur(5px);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateX(0) translateY(0) rotateY(0deg) scale(1);
+                filter: blur(0px);
+            }
+        }
+
+        /* MAGICAL GLOW EFFECT */
+        .magical-glow {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .magical-glow::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                transparent,
+                rgba(59, 130, 246, 0.3),
+                transparent,
+                rgba(139, 92, 246, 0.3),
+                transparent,
+                rgba(236, 72, 153, 0.3),
+                transparent
+            );
+            animation: magicalRotate 4s linear infinite;
+            z-index: -1;
+        }
+        
+        @keyframes magicalRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* TYPEWRITER EFFECT FOR TEXT */
+        .typewriter {
+            overflow: hidden;
+            border-right: 3px solid #3b82f6;
+            white-space: nowrap;
+            animation: typewriter 2s steps(20) forwards, blink 1s infinite;
+            animation-delay: 2s;
+            width: 0;
+        }
+        
+        @keyframes typewriter {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
+        
+        @keyframes blink {
+            0%, 50% { border-color: #3b82f6; }
+            51%, 100% { border-color: transparent; }
+        }
+
+        /* FLOATING ELEMENTS BACKGROUND */
+        .floating-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .floating-element {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.1;
+            animation: floatAround 20s infinite linear;
+        }
+
+        .floating-element:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .floating-element:nth-child(2) { left: 20%; animation-delay: -2s; }
+        .floating-element:nth-child(3) { left: 30%; animation-delay: -4s; }
+        .floating-element:nth-child(4) { left: 40%; animation-delay: -6s; }
+        .floating-element:nth-child(5) { left: 50%; animation-delay: -8s; }
+        .floating-element:nth-child(6) { left: 60%; animation-delay: -10s; }
+        .floating-element:nth-child(7) { left: 70%; animation-delay: -12s; }
+        .floating-element:nth-child(8) { left: 80%; animation-delay: -14s; }
+
+        @keyframes floatAround {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        /* RIPPLE EFFECT ON LOAD */
+        .ripple-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .ripple {
+            position: absolute;
+            border: 2px solid rgba(59, 130, 246, 0.6);
+            border-radius: 50%;
+            animation: rippleEffect 2s ease-out forwards;
+        }
+
+        .ripple:nth-child(1) { animation-delay: 0s; }
+        .ripple:nth-child(2) { animation-delay: 0.3s; }
+        .ripple:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes rippleEffect {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            100% {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* Enhanced pulse rings with more dramatic effects */
+        .pulse-ring {
+            animation: pulseRing 3s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+        @keyframes pulseRing {
+            0% { 
+                transform: scale(0.5); 
+                opacity: 1; 
+                filter: blur(0px);
+            }
+            50% { 
+                transform: scale(1.5); 
+                opacity: 0.7; 
+                filter: blur(2px);
+            }
+            100% { 
+                transform: scale(2.5); 
+                opacity: 0; 
+                filter: blur(5px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Database simulation using localStorage
+        const Database = {
+            // User management
+            createUser: (username, email, password) => {
+                const users = JSON.parse(localStorage.getItem('budgetbuy_users') || '{}');
+                if (users[email]) {
+                    throw new Error('User already exists');
+                }
+                users[email] = {
+                    username,
+                    email,
+                    password, // In real app, this would be hashed
+                    createdAt: new Date().toISOString(),
+                    watchlist: []
+                };
+                localStorage.setItem('budgetbuy_users', JSON.stringify(users));
+                return { username, email };
+            },
+
+            authenticateUser: (email, password) => {
+                const users = JSON.parse(localStorage.getItem('budgetbuy_users') || '{}');
+                const user = users[email];
+                if (!user || user.password !== password) {
+                    throw new Error('Invalid credentials');
+                }
+                return { username: user.username, email: user.email };
+            },
+
+            // Watchlist management
+            addToWatchlist: (userEmail, productId) => {
+                const users = JSON.parse(localStorage.getItem('budgetbuy_users') || '{}');
+                if (users[userEmail]) {
+                    if (!users[userEmail].watchlist.includes(productId)) {
+                        users[userEmail].watchlist.push(productId);
+                        localStorage.setItem('budgetbuy_users', JSON.stringify(users));
+                    }
+                }
+            },
+
+            removeFromWatchlist: (userEmail, productId) => {
+                const users = JSON.parse(localStorage.getItem('budgetbuy_users') || '{}');
+                if (users[userEmail]) {
+                    users[userEmail].watchlist = users[userEmail].watchlist.filter(id => id !== productId);
+                    localStorage.setItem('budgetbuy_users', JSON.stringify(users));
+                }
+            },
+
+            getWatchlist: (userEmail) => {
+                const users = JSON.parse(localStorage.getItem('budgetbuy_users') || '{}');
+                return users[userEmail]?.watchlist || [];
+            }
+        };
+
+        // Store logos mapping with real brand logos
+        const storeLogos = {
+            "Amazon": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/200px-Amazon_logo.svg.png",
+            "Flipkart": "https://logos-world.net/wp-content/uploads/2020/11/Flipkart-Logo.png", 
+            "BigBasket": "https://logos-world.net/wp-content/uploads/2020/11/BigBasket-Logo.png",
+            "Myntra": "https://logos-world.net/wp-content/uploads/2020/08/Myntra-Logo.png",
+            "Nykaa": "https://logos-world.net/wp-content/uploads/2021/02/Nykaa-Logo.png",
+            "Swiggy": "https://logos-world.net/wp-content/uploads/2020/11/Swiggy-Logo.png"
+        };
+
+        // Categories with emojis
+        const categories = [
+            { id: 'all', name: 'All Products', emoji: '🛒', color: 'bg-blue-100 text-blue-600' },
+            { id: 'groceries', name: 'Groceries', emoji: '🥬', color: 'bg-green-100 text-green-600' },
+            { id: 'electronics', name: 'Electronics', emoji: '📱', color: 'bg-purple-100 text-purple-600' },
+            { id: 'fashion', name: 'Fashion', emoji: '👕', color: 'bg-pink-100 text-pink-600' },
+            { id: 'beauty', name: 'Beauty', emoji: '💄', color: 'bg-rose-100 text-rose-600' },
+            { id: 'home', name: 'Home & Kitchen', emoji: '🏠', color: 'bg-orange-100 text-orange-600' },
+            { id: 'books', name: 'Books', emoji: '📚', color: 'bg-indigo-100 text-indigo-600' },
+            { id: 'sports', name: 'Sports', emoji: '⚽', color: 'bg-red-100 text-red-600' },
+            { id: 'toys', name: 'Toys', emoji: '🧸', color: 'bg-yellow-100 text-yellow-600' }
+        ];
+
+        // Function to get best deal store
+        const getBestDealStore = (prices) => {
+            const lowestPrice = Math.min(...prices.map(p => p.price));
+            return prices.find(p => p.price === lowestPrice)?.store;
+        };
+
+        // Comprehensive mock data for products across all categories (iPhone versions up to 12 only)
+        const mockProducts = [
+            // GROCERIES
+            {
+                id: 1,
+                name: "Organic White Rice",
+                category: "groceries",
+                image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&h=200&fit=crop",
+                description: "Premium quality organic white rice, perfect for daily meals. Grown without pesticides and chemicals.",
+                specs: { weight: "5kg", brand: "Organic Farms", type: "Basmati", origin: "Punjab" },
+                prices: [
+                    { store: "Amazon", price: 450, url: "https://amazon.in/organic-white-rice" },
+                    { store: "Flipkart", price: 425, url: "https://flipkart.com/organic-white-rice" },
+                    { store: "BigBasket", price: 440, url: "https://bigbasket.com/organic-white-rice" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 460 },
+                    { date: "Tue", price: 455 },
+                    { date: "Wed", price: 450 },
+                    { date: "Thu", price: 445 },
+                    { date: "Fri", price: 440 },
+                    { date: "Sat", price: 435 },
+                    { date: "Sun", price: 425 }
+                ]
+            },
+            {
+                id: 2,
+                name: "Fresh Farm Eggs",
+                category: "groceries",
+                image: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=300&h=200&fit=crop",
+                description: "Farm-fresh eggs from free-range chickens. Rich in protein and essential nutrients.",
+                specs: { quantity: "30 pieces", brand: "Farm Fresh", type: "Brown", size: "Large" },
+                prices: [
+                    { store: "Amazon", price: 180, url: "https://amazon.in/fresh-farm-eggs" },
+                    { store: "Flipkart", price: 175, url: "https://flipkart.com/fresh-farm-eggs" },
+                    { store: "BigBasket", price: 170, url: "https://bigbasket.com/fresh-farm-eggs" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 185 },
+                    { date: "Tue", price: 182 },
+                    { date: "Wed", price: 180 },
+                    { date: "Thu", price: 178 },
+                    { date: "Fri", price: 175 },
+                    { date: "Sat", price: 172 },
+                    { date: "Sun", price: 170 }
+                ]
+            },
+
+            // ELECTRONICS (Only iPhone 12 and older models)
+            {
+                id: 9,
+                name: "iPhone 11",
+                category: "electronics",
+                image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=200&fit=crop",
+                description: "iPhone 11 with A13 Bionic chip, dual camera system, and all-day battery life.",
+                specs: { storage: "128GB", color: "Black", display: "6.1 inch", camera: "12MP" },
+                prices: [
+                    { store: "Amazon", price: 54900, url: "https://amazon.in/iphone-11" },
+                    { store: "Flipkart", price: 52900, url: "https://flipkart.com/iphone-11" },
+                    { store: "Myntra", price: 56900, url: "https://myntra.com/iphone-11" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 59900 },
+                    { date: "Tue", price: 57900 },
+                    { date: "Wed", price: 56900 },
+                    { date: "Thu", price: 54900 },
+                    { date: "Fri", price: 53900 },
+                    { date: "Sat", price: 52900 },
+                    { date: "Sun", price: 52900 }
+                ]
+            },
+            {
+                id: 10,
+                name: "iPhone XR",
+                category: "electronics",
+                image: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=300&h=200&fit=crop",
+                description: "iPhone XR with A12 Bionic chip, Liquid Retina display, and advanced Face ID.",
+                specs: { storage: "64GB", color: "Red", display: "6.1 inch", camera: "12MP" },
+                prices: [
+                    { store: "Amazon", price: 42900, url: "https://amazon.in/iphone-xr" },
+                    { store: "Flipkart", price: 40900, url: "https://flipkart.com/iphone-xr" },
+                    { store: "Myntra", price: 44900, url: "https://myntra.com/iphone-xr" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 47900 },
+                    { date: "Tue", price: 45900 },
+                    { date: "Wed", price: 44900 },
+                    { date: "Thu", price: 42900 },
+                    { date: "Fri", price: 41900 },
+                    { date: "Sat", price: 40900 },
+                    { date: "Sun", price: 40900 }
+                ]
+            },
+            {
+                id: 11,
+                name: "Sony WH-1000XM4",
+                category: "electronics",
+                image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=200&fit=crop",
+                description: "Premium noise-canceling headphones with exceptional sound quality and comfort.",
+                specs: { type: "Over-ear", connectivity: "Bluetooth 5.0", battery: "30 hours", features: "ANC" },
+                prices: [
+                    { store: "Amazon", price: 24990, url: "https://amazon.in/sony-wh-1000xm4" },
+                    { store: "Flipkart", price: 23990, url: "https://flipkart.com/sony-wh-1000xm4" },
+                    { store: "Myntra", price: 26990, url: "https://myntra.com/sony-wh-1000xm4" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 27990 },
+                    { date: "Tue", price: 26990 },
+                    { date: "Wed", price: 25990 },
+                    { date: "Thu", price: 24990 },
+                    { date: "Fri", price: 24490 },
+                    { date: "Sat", price: 23990 },
+                    { date: "Sun", price: 23990 }
+                ]
+            },
+
+            // FASHION
+            {
+                id: 12,
+                name: "Nike Air Max 270",
+                category: "fashion",
+                image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&h=200&fit=crop",
+                description: "Comfortable running shoes with Max Air cushioning and modern design.",
+                specs: { size: "UK 8", color: "Black/White", material: "Mesh", type: "Running" },
+                prices: [
+                    { store: "Amazon", price: 12995, url: "https://amazon.in/nike-air-max-270" },
+                    { store: "Flipkart", price: 11995, url: "https://flipkart.com/nike-air-max-270" },
+                    { store: "Myntra", price: 13495, url: "https://myntra.com/nike-air-max-270" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 14995 },
+                    { date: "Tue", price: 14495 },
+                    { date: "Wed", price: 13995 },
+                    { date: "Thu", price: 13495 },
+                    { date: "Fri", price: 12995 },
+                    { date: "Sat", price: 12495 },
+                    { date: "Sun", price: 11995 }
+                ]
+            },
+
+            // BEAUTY
+            {
+                id: 13,
+                name: "Lakme Absolute Foundation",
+                category: "beauty",
+                image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&h=200&fit=crop",
+                description: "Full coverage foundation with SPF protection and long-lasting formula.",
+                specs: { shade: "Ivory Fair 01", coverage: "Full", spf: "SPF 20", volume: "25ml" },
+                prices: [
+                    { store: "Amazon", price: 1050, url: "https://amazon.in/lakme-absolute-foundation" },
+                    { store: "Nykaa", price: 999, url: "https://nykaa.com/lakme-absolute-foundation" },
+                    { store: "Flipkart", price: 1100, url: "https://flipkart.com/lakme-absolute-foundation" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 1200 },
+                    { date: "Tue", price: 1150 },
+                    { date: "Wed", price: 1100 },
+                    { date: "Thu", price: 1050 },
+                    { date: "Fri", price: 1025 },
+                    { date: "Sat", price: 999 },
+                    { date: "Sun", price: 999 }
+                ]
+            },
+
+            // HOME & KITCHEN
+            {
+                id: 14,
+                name: "Prestige Pressure Cooker",
+                category: "home",
+                image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop",
+                description: "Durable aluminum pressure cooker for fast and efficient cooking.",
+                specs: { capacity: "5 Liters", material: "Aluminum", safety: "ISI Certified", warranty: "5 Years" },
+                prices: [
+                    { store: "Amazon", price: 2499, url: "https://amazon.in/prestige-pressure-cooker" },
+                    { store: "Flipkart", price: 2399, url: "https://flipkart.com/prestige-pressure-cooker" },
+                    { store: "BigBasket", price: 2599, url: "https://bigbasket.com/prestige-pressure-cooker" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 2799 },
+                    { date: "Tue", price: 2699 },
+                    { date: "Wed", price: 2599 },
+                    { date: "Thu", price: 2499 },
+                    { date: "Fri", price: 2449 },
+                    { date: "Sat", price: 2399 },
+                    { date: "Sun", price: 2399 }
+                ]
+            },
+
+            // BOOKS
+            {
+                id: 15,
+                name: "Atomic Habits",
+                category: "books",
+                image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=200&fit=crop",
+                description: "Bestselling book on building good habits and breaking bad ones by James Clear.",
+                specs: { author: "James Clear", pages: "320", language: "English", format: "Paperback" },
+                prices: [
+                    { store: "Amazon", price: 399, url: "https://amazon.in/atomic-habits" },
+                    { store: "Flipkart", price: 359, url: "https://flipkart.com/atomic-habits" },
+                    { store: "BigBasket", price: 429, url: "https://bigbasket.com/atomic-habits" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 499 },
+                    { date: "Tue", price: 469 },
+                    { date: "Wed", price: 439 },
+                    { date: "Thu", price: 409 },
+                    { date: "Fri", price: 389 },
+                    { date: "Sat", price: 359 },
+                    { date: "Sun", price: 359 }
+                ]
+            },
+
+            // SPORTS
+            {
+                id: 16,
+                name: "Yoga Mat Premium",
+                category: "sports",
+                image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=200&fit=crop",
+                description: "Non-slip yoga mat with extra cushioning for comfortable practice.",
+                specs: { thickness: "6mm", material: "TPE", size: "183cm x 61cm", weight: "1.2kg" },
+                prices: [
+                    { store: "Amazon", price: 1299, url: "https://amazon.in/yoga-mat-premium" },
+                    { store: "Flipkart", price: 1199, url: "https://flipkart.com/yoga-mat-premium" },
+                    { store: "Myntra", price: 1399, url: "https://myntra.com/yoga-mat-premium" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 1499 },
+                    { date: "Tue", price: 1449 },
+                    { date: "Wed", price: 1399 },
+                    { date: "Thu", price: 1349 },
+                    { date: "Fri", price: 1299 },
+                    { date: "Sat", price: 1249 },
+                    { date: "Sun", price: 1199 }
+                ]
+            },
+
+            // TOYS
+            {
+                id: 17,
+                name: "LEGO Classic Set",
+                category: "toys",
+                image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=200&fit=crop",
+                description: "Creative building blocks set for endless imagination and fun.",
+                specs: { pieces: "484", age: "4-99 years", theme: "Classic", brand: "LEGO" },
+                prices: [
+                    { store: "Amazon", price: 2999, url: "https://amazon.in/lego-classic-set" },
+                    { store: "Flipkart", price: 2799, url: "https://flipkart.com/lego-classic-set" },
+                    { store: "Myntra", price: 3199, url: "https://myntra.com/lego-classic-set" }
+                ],
+                priceHistory: [
+                    { date: "Mon", price: 3499 },
+                    { date: "Tue", price: 3299 },
+                    { date: "Wed", price: 3199 },
+                    { date: "Thu", price: 2999 },
+                    { date: "Fri", price: 2899 },
+                    { date: "Sat", price: 2799 },
+                    { date: "Sun", price: 2799 }
+                ]
+            }
+        ];
+
+        // Auth Modal Component
+        const AuthModal = ({ isOpen, onClose, onLogin }) => {
+            const [isSignUp, setIsSignUp] = useState(false);
+            const [formData, setFormData] = useState({
+                username: '',
+                email: '',
+                password: ''
+            });
+            const [error, setError] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setError('');
+                
+                try {
+                    if (isSignUp) {
+                        const user = Database.createUser(formData.username, formData.email, formData.password);
+                        onLogin(user);
+                    } else {
+                        const user = Database.authenticateUser(formData.email, formData.password);
+                        onLogin(user);
+                    }
+                    onClose();
+                    setFormData({ username: '', email: '', password: '' });
+                } catch (err) {
+                    setError(err.message);
+                }
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl max-w-md w-full modal-enter shadow-2xl">
+                        <div className="p-8">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold gradient-text">
+                                    {isSignUp ? 'Create Account' : 'Sign In'}
+                                </h2>
+                                <button 
+                                    onClick={onClose}
+                                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                {isSignUp && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Username
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            value={formData.username}
+                                            onChange={(e) => setFormData({...formData, username: e.target.value})}
+                                        />
+                                    </div>
+                                )}
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        required
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                    />
+                                </div>
+
+                                {error && (
+                                    <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+                                        {error}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all"
+                                >
+                                    {isSignUp ? 'Create Account' : 'Sign In'}
+                                </button>
+                            </form>
+
+                            <div className="mt-6 text-center">
+                                <button
+                                    onClick={() => setIsSignUp(!isSignUp)}
+                                    className="text-blue-500 hover:text-blue-600 font-medium"
+                                >
+                                    {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Header Component
+        const Header = ({ user, onSignOut, currentPage, onPageChange }) => {
+            return (
+                <header className="bg-white shadow-lg border-b border-gray-200">
+                    <div className="container mx-auto px-4 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <h1 className="text-2xl font-bold gradient-text">🛒 BudgetBuy</h1>
+                                <nav className="hidden md:flex space-x-6">
+                                    <button
+                                        onClick={() => onPageChange('home')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                            currentPage === 'home' 
+                                                ? 'bg-blue-100 text-blue-600' 
+                                                : 'text-gray-600 hover:text-blue-600'
+                                        }`}
+                                    >
+                                        🏠 Home
+                                    </button>
+                                    <button
+                                        onClick={() => onPageChange('watchlist')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                            currentPage === 'watchlist' 
+                                                ? 'bg-blue-100 text-blue-600' 
+                                                : 'text-gray-600 hover:text-blue-600'
+                                        }`}
+                                    >
+                                        ⭐ My Watchlist
+                                    </button>
+                                </nav>
+                            </div>
+                            
+                            <div className="flex items-center space-x-4">
+                                <span className="text-gray-700 font-medium">
+                                    👋 Hello, {user.username}!
+                                </span>
+                                <button
+                                    onClick={onSignOut}
+                                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all"
+                                >
+                                    Sign Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+            );
+        };
+
+        // Enhanced Loading Screen Component
+        const LoadingScreen = () => {
+            return (
+                <div className="fixed inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center z-50">
+                    <div className="text-center">
+                        <div className="relative mb-8">
+                            <div className="pulse-ring absolute inset-0 border-4 border-white rounded-full"></div>
+                            <div className="flex items-center justify-center">
+                                <div className="loading-spinner mr-4 text-white text-6xl float">🛒</div>
+                                <h1 className="text-6xl font-bold text-white logo-bounce">BudgetBuy</h1>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-center space-x-2">
+                            <div className="w-3 h-3 bg-white rounded-full animate-bounce"></div>
+                            <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                        <p className="text-xl text-blue-100 mt-4 fade-in">Finding the best deals for you...</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // Category Filter Component
+        const CategoryFilter = ({ categories, selectedCategory, onCategoryChange }) => {
+            return (
+                <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Shop by Category</h3>
+                    <div className="flex flex-wrap gap-3">
+                        {categories.map((category) => (
+                            <button
+                                key={category.id}
+                                onClick={() => onCategoryChange(category.id)}
+                                className={`px-4 py-2 rounded-full font-medium transition-all category-hover ${
+                                    selectedCategory === category.id
+                                        ? `${category.color} shadow-lg transform scale-105`
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                <span className="mr-2">{category.emoji}</span>
+                                {category.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // Enhanced Product Card Component
+        const ProductCard = ({ product, onClick, isInWatchlist, onToggleWatchlist, user }) => {
+            const lowestPrice = Math.min(...product.prices.map(p => p.price));
+            const bestDealStore = getBestDealStore(product.prices);
+            const bestDealPrice = product.prices.find(p => p.price === lowestPrice);
+            const storeLogo = storeLogos[bestDealStore];
+            
+            const handleWatchlistClick = (e) => {
+                e.stopPropagation();
+                onToggleWatchlist(product.id);
+            };
+
+            const handleBuyClick = (e) => {
+                e.stopPropagation();
+                window.open(bestDealPrice.url, '_blank');
+            };
+            
+            return (
+                <div 
+                    className="bg-white rounded-xl shadow-lg card-hover cursor-pointer overflow-hidden border border-gray-100"
+                    onClick={() => onClick(product)}
+                >
+                    <div className="relative overflow-hidden">
+                        <img 
+                            src={product.image} 
+                            alt={product.name}
+                            className="w-full h-48 object-cover transition-transform duration-300 hover:scale-110"
+                            onError={(e) => {
+                                e.target.src = `https://via.placeholder.com/300x200/4ade80/ffffff?text=${encodeURIComponent(product.name)}`;
+                            }}
+                        />
+                        <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold best-deal-badge">
+                            Best Deal
+                        </div>
+                        <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
+                            <img 
+                                src={storeLogo} 
+                                alt={`${bestDealStore} logo`}
+                                className="w-8 h-8 object-contain store-logo"
+                                title={`Best price at ${bestDealStore}`}
+                                onError={(e) => {
+                                    // Fallback to text if image fails to load
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'block';
+                                }}
+                            />
+                            <div className="text-xs font-bold text-gray-700 hidden">
+                                {bestDealStore}
+                            </div>
+                        </div>
+                        {user && (
+                            <button
+                                onClick={handleWatchlistClick}
+                                className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-all heart-bounce"
+                                title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+                            >
+                                <span className="text-xl">
+                                    {isInWatchlist ? "❤️" : "🤍"}
+                                </span>
+                            </button>
+                        )}
+                    </div>
+                    <div className="p-4">
+                        <h3 className="font-semibold text-gray-800 mb-2 text-lg">{product.name}</h3>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={handleBuyClick}
+                                    className="text-2xl font-bold text-green-600 price-highlight px-3 py-2 rounded-lg hover:bg-green-50 transition-all cursor-pointer border-2 border-green-200 hover:border-green-400"
+                                    title={`Buy now at ${bestDealStore}`}
+                                >
+                                    ₹{lowestPrice}
+                                </button>
+                                <span className="text-xs text-gray-600 bg-blue-100 px-2 py-1 rounded-full">
+                                    @ {bestDealStore}
+                                </span>
+                            </div>
+                            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">🛒 Click to Buy</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Enhanced Price Chart Component with Line Graphs and Better Visualization
+        const PriceChart = ({ priceHistory }) => {
+            const [chartType, setChartType] = useState('line');
+            const maxPrice = Math.max(...priceHistory.map(item => item.price));
+            const minPrice = Math.min(...priceHistory.map(item => item.price));
+            const range = maxPrice - minPrice;
+            const currentPrice = priceHistory[priceHistory.length - 1].price;
+            const firstPrice = priceHistory[0].price;
+            const priceChange = currentPrice - firstPrice;
+            const priceChangePercent = ((priceChange / firstPrice) * 100).toFixed(1);
+            const isPositiveTrend = priceChange >= 0;
+
+            // Calculate moving average for trend line
+            const movingAverage = priceHistory.map((item, index) => {
+                if (index < 2) return item.price;
+                const sum = priceHistory.slice(Math.max(0, index - 2), index + 1)
+                    .reduce((acc, curr) => acc + curr.price, 0);
+                return sum / Math.min(3, index + 1);
+            });
+
+            // Generate SVG path for line chart
+            const generateLinePath = (data, isAverage = false) => {
+                const chartWidth = 100;
+                const chartHeight = 100;
+                const padding = 5;
+                
+                const points = data.map((price, index) => {
+                    const x = padding + (index / (data.length - 1)) * (chartWidth - 2 * padding);
+                    const y = padding + (1 - (price - minPrice) / (range || 1)) * (chartHeight - 2 * padding);
+                    return `${x},${y}`;
+                });
+                
+                return `M ${points.join(' L ')}`;
+            };
+
+            const linePath = generateLinePath(priceHistory.map(item => item.price));
+            const averagePath = generateLinePath(movingAverage);
+
+            return (
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-lg">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h4 className="font-bold text-xl text-gray-800 mb-2">📈 Price Trend Analysis</h4>
+                            <p className="text-sm text-gray-600">Last 7 days performance with trend insights</p>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-2xl font-bold text-gray-800">₹{currentPrice}</div>
+                            <div className={`text-sm font-semibold flex items-center ${
+                                isPositiveTrend ? 'text-red-500' : 'text-green-500'
+                            }`}>
+                                <span className="mr-1">
+                                    {isPositiveTrend ? '📈' : '📉'}
+                                </span>
+                                {isPositiveTrend ? '+' : ''}₹{priceChange} ({priceChangePercent}%)
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chart Type Toggle */}
+                    <div className="flex justify-center mb-6">
+                        <div className="bg-gray-100 p-1 rounded-lg flex">
+                            <button
+                                onClick={() => setChartType('line')}
+                                className={`px-4 py-2 rounded-md font-medium transition-all ${
+                                    chartType === 'line' 
+                                        ? 'bg-blue-500 text-white shadow-md' 
+                                        : 'text-gray-600 hover:text-blue-500'
+                                }`}
+                            >
+                                📈 Line Graph
+                            </button>
+                            <button
+                                onClick={() => setChartType('bar')}
+                                className={`px-4 py-2 rounded-md font-medium transition-all ${
+                                    chartType === 'bar' 
+                                        ? 'bg-blue-500 text-white shadow-md' 
+                                        : 'text-gray-600 hover:text-blue-500'
+                                }`}
+                            >
+                                📊 Bar Chart
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Price Range Indicator */}
+                    <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+                        <div className="flex justify-between text-sm mb-3">
+                            <span className="text-green-600 font-semibold flex items-center">
+                                <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                🔻 Lowest: ₹{minPrice}
+                            </span>
+                            <span className="text-red-600 font-semibold flex items-center">
+                                <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                🔺 Highest: ₹{maxPrice}
+                            </span>
+                        </div>
+                        <div className="text-xs text-gray-600 text-center bg-white/60 p-2 rounded-lg">
+                            <span className="font-medium">📊 Price Volatility:</span> ₹{range} range 
+                            ({((range/minPrice)*100).toFixed(1)}% variation)
+                        </div>
+                    </div>
+
+                    {/* Interactive Chart */}
+                    <div className="relative bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-100">
+                        {chartType === 'line' ? (
+                            // Line Chart with SVG
+                            <div className="relative h-64">
+                                {/* Grid Lines */}
+                                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    {/* Horizontal Grid Lines */}
+                                    {[...Array(5)].map((_, i) => (
+                                        <line
+                                            key={`h-${i}`}
+                                            x1="5" y1={5 + i * 22.5} x2="95" y2={5 + i * 22.5}
+                                            stroke="#e5e7eb" strokeWidth="0.2" opacity="0.5"
+                                        />
+                                    ))}
+                                    {/* Vertical Grid Lines */}
+                                    {priceHistory.map((_, i) => (
+                                        <line
+                                            key={`v-${i}`}
+                                            x1={5 + (i / (priceHistory.length - 1)) * 90} y1="5"
+                                            x2={5 + (i / (priceHistory.length - 1)) * 90} y2="95"
+                                            stroke="#e5e7eb" strokeWidth="0.2" opacity="0.3"
+                                        />
+                                    ))}
+                                    
+                                    {/* Price Area Fill */}
+                                    <defs>
+                                        <linearGradient id="priceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stopColor={isPositiveTrend ? "#ef4444" : "#10b981"} stopOpacity="0.3"/>
+                                            <stop offset="100%" stopColor={isPositiveTrend ? "#ef4444" : "#10b981"} stopOpacity="0.05"/>
+                                        </linearGradient>
+                                    </defs>
+                                    
+                                    {/* Area under the line */}
+                                    <path
+                                        d={`${linePath} L 95,95 L 5,95 Z`}
+                                        fill="url(#priceGradient)"
+                                        className="animate-pulse"
+                                    />
+                                    
+                                    {/* Moving Average Line */}
+                                    <path
+                                        d={averagePath}
+                                        fill="none"
+                                        stroke="#8b5cf6"
+                                        strokeWidth="0.8"
+                                        strokeDasharray="2,2"
+                                        opacity="0.7"
+                                    />
+                                    
+                                    {/* Main Price Line */}
+                                    <path
+                                        d={linePath}
+                                        fill="none"
+                                        stroke={isPositiveTrend ? "#ef4444" : "#10b981"}
+                                        strokeWidth="1.2"
+                                        className="drop-shadow-sm line-draw"
+                                        strokeDasharray="1000"
+                                        strokeDashoffset="1000"
+                                    />
+                                    
+                                    {/* Data Points */}
+                                    {priceHistory.map((item, index) => {
+                                        const x = 5 + (index / (priceHistory.length - 1)) * 90;
+                                        const y = 5 + (1 - (item.price - minPrice) / (range || 1)) * 90;
+                                        const isLowest = item.price === minPrice;
+                                        const isHighest = item.price === maxPrice;
+                                        const isToday = index === priceHistory.length - 1;
+                                        
+                                        return (
+                                            <g key={index}>
+                                                {/* Point Shadow */}
+                                                <circle
+                                                    cx={x} cy={y + 0.5}
+                                                    r={isLowest || isHighest || isToday ? "2" : "1.5"}
+                                                    fill="rgba(0,0,0,0.1)"
+                                                />
+                                                {/* Main Point */}
+                                                <circle
+                                                    cx={x} cy={y}
+                                                    r={isLowest || isHighest || isToday ? "2" : "1.5"}
+                                                    fill={
+                                                        isLowest ? "#10b981" :
+                                                        isHighest ? "#ef4444" :
+                                                        isToday ? "#3b82f6" : "#6b7280"
+                                                    }
+                                                    stroke="white"
+                                                    strokeWidth="0.5"
+                                                    className="hover:r-3 transition-all cursor-pointer point-pop"
+                                                    style={{animationDelay: `${index * 0.2}s`}}
+                                                />
+                                                {/* Pulse effect for special points */}
+                                                {(isLowest || isHighest || isToday) && (
+                                                    <circle
+                                                        cx={x} cy={y}
+                                                        r="3"
+                                                        fill="none"
+                                                        stroke={
+                                                            isLowest ? "#10b981" :
+                                                            isHighest ? "#ef4444" : "#3b82f6"
+                                                        }
+                                                        strokeWidth="0.5"
+                                                        opacity="0.6"
+                                                        className="animate-ping"
+                                                    />
+                                                )}
+                                            </g>
+                                        );
+                                    })}
+                                </svg>
+                                
+                                {/* Interactive Tooltips */}
+                                <div className="absolute inset-0 flex justify-between items-end pb-8">
+                                    {priceHistory.map((item, index) => {
+                                        const isLowest = item.price === minPrice;
+                                        const isHighest = item.price === maxPrice;
+                                        const isToday = index === priceHistory.length - 1;
+                                        
+                                        return (
+                                            <div key={index} className="flex flex-col items-center flex-1 group relative">
+                                                {/* Hover Tooltip */}
+                                                <div className="absolute -top-20 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-3 py-2 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-20 whitespace-nowrap">
+                                                    <div className="font-bold">₹{item.price}</div>
+                                                    <div className="text-gray-300">{item.date}</div>
+                                                    {index > 0 && (
+                                                        <div className={`text-xs ${
+                                                            item.price > priceHistory[index-1].price ? 'text-red-300' : 'text-green-300'
+                                                        }`}>
+                                                            {item.price > priceHistory[index-1].price ? '↗' : '↘'} 
+                                                            ₹{Math.abs(item.price - priceHistory[index-1].price)}
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                                </div>
+                                                
+                                                {/* Invisible hover area */}
+                                                <div className="w-full h-full absolute inset-0 cursor-pointer"></div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                
+                                {/* Day Labels */}
+                                <div className="flex justify-between mt-4">
+                                    {priceHistory.map((item, index) => {
+                                        const isToday = index === priceHistory.length - 1;
+                                        return (
+                                            <div key={index} className={`text-xs font-medium transition-all duration-200 ${
+                                                isToday ? 'text-blue-600 bg-blue-100 px-2 py-1 rounded-full' : 'text-gray-500'
+                                            }`}>
+                                                {item.date}
+                                                {isToday && <span className="ml-1">📅</span>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            // Bar Chart (existing implementation)
+                            <div className="relative">
+                                {/* Grid Lines */}
+                                <div className="absolute inset-0 flex flex-col justify-between opacity-20">
+                                    {[...Array(5)].map((_, i) => (
+                                        <div key={i} className="border-t border-gray-300"></div>
+                                    ))}
+                                </div>
+
+                                {/* Chart Bars */}
+                                <div className="flex items-end justify-between h-48 space-x-1 relative z-10">
+                                    {priceHistory.map((item, index) => {
+                                        const height = range > 0 ? ((item.price - minPrice) / range) * 100 : 50;
+                                        const isLowest = item.price === minPrice;
+                                        const isHighest = item.price === maxPrice;
+                                        const isToday = index === priceHistory.length - 1;
+                                        
+                                        return (
+                                            <div key={index} className="flex flex-col items-center flex-1 group relative">
+                                                {/* Hover Tooltip */}
+                                                <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-3 py-2 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-20 whitespace-nowrap">
+                                                    <div className="font-bold">₹{item.price}</div>
+                                                    <div className="text-gray-300">{item.date}</div>
+                                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                                </div>
+
+                                                {/* Price Label */}
+                                                <div className={`text-xs mb-2 font-bold transition-all duration-200 ${
+                                                    isLowest ? 'text-green-600' : 
+                                                    isHighest ? 'text-red-600' : 
+                                                    isToday ? 'text-blue-600' : 'text-gray-600'
+                                                }`}>
+                                                    ₹{item.price}
+                                                    {isLowest && <span className="ml-1">🏆</span>}
+                                                    {isHighest && <span className="ml-1">⚠️</span>}
+                                                    {isToday && <span className="ml-1">📍</span>}
+                                                </div>
+
+                                                {/* Bar */}
+                                                <div 
+                                                    className={`w-full rounded-t-lg transition-all duration-700 hover:scale-105 cursor-pointer relative overflow-hidden ${
+                                                        isLowest ? 'bg-gradient-to-t from-green-400 to-green-500 shadow-lg shadow-green-200' :
+                                                        isHighest ? 'bg-gradient-to-t from-red-400 to-red-500 shadow-lg shadow-red-200' :
+                                                        isToday ? 'bg-gradient-to-t from-blue-400 to-blue-500 shadow-lg shadow-blue-200' :
+                                                        'bg-gradient-to-t from-gray-400 to-gray-500'
+                                                    }`}
+                                                    style={{ 
+                                                        height: `${Math.max(height, 20)}%`,
+                                                        animationDelay: `${index * 0.15}s`
+                                                    }}
+                                                >
+                                                    {/* Shimmer Effect */}
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 transform -skew-x-12 shimmer"></div>
+                                                </div>
+
+                                                {/* Day Label */}
+                                                <div className={`text-xs mt-2 font-semibold transition-all duration-200 ${
+                                                    isToday ? 'text-blue-600 bg-blue-100 px-2 py-1 rounded-full' : 'text-gray-500'
+                                                }`}>
+                                                    {item.date}
+                                                    {isToday && <span className="ml-1">📅</span>}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Legend for Line Chart */}
+                    {chartType === 'line' && (
+                        <div className="flex justify-center space-x-6 mt-4 text-xs">
+                            <div className="flex items-center">
+                                <div className={`w-3 h-0.5 mr-2 ${isPositiveTrend ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                <span className="text-gray-600">Price Trend</span>
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-3 h-0.5 bg-purple-500 mr-2" style={{backgroundImage: 'repeating-linear-gradient(to right, #8b5cf6 0, #8b5cf6 2px, transparent 2px, transparent 4px)'}}></div>
+                                <span className="text-gray-600">3-Day Average</span>
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                <span className="text-gray-600">Best Price</span>
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                                <span className="text-gray-600">Highest Price</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Enhanced Trend Analysis */}
+                    <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                                <div className={`w-3 h-3 rounded-full ${
+                                    isPositiveTrend ? 'bg-red-400 animate-pulse' : 'bg-green-400 animate-pulse'
+                                }`}></div>
+                                <span className="font-semibold text-gray-700">
+                                    {isPositiveTrend ? '📈 Price Increasing Trend' : '📉 Price Decreasing Trend'}
+                                </span>
+                            </div>
+                            <div className="text-sm text-gray-600 font-medium">
+                                {isPositiveTrend ? 
+                                    '💡 Consider waiting for a better deal' : 
+                                    '🎯 Great time to buy!'
+                                }
+                            </div>
+                        </div>
+                        
+                        {/* Detailed Analysis */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                            <div className="bg-white/60 p-3 rounded-lg text-center">
+                                <div className="text-lg font-bold text-gray-800">
+                                    {Math.abs(priceChangePercent)}%
+                                </div>
+                                <div className="text-xs text-gray-600">Weekly Change</div>
+                            </div>
+                            <div className="bg-white/60 p-3 rounded-lg text-center">
+                                <div className="text-lg font-bold text-gray-800">
+                                    ₹{Math.round(movingAverage[movingAverage.length - 1])}
+                                </div>
+                                <div className="text-xs text-gray-600">3-Day Average</div>
+                            </div>
+                            <div className="bg-white/60 p-3 rounded-lg text-center">
+                                <div className="text-lg font-bold text-gray-800">
+                                    {((range/minPrice)*100).toFixed(0)}%
+                                </div>
+                                <div className="text-xs text-gray-600">Volatility</div>
+                            </div>
+                        </div>
+                        
+                        {/* Smart Recommendation */}
+                        <div className="mt-4 text-xs text-gray-600 bg-white/60 p-3 rounded-lg">
+                            <span className="font-medium">🤖 AI Recommendation:</span> 
+                            {Math.abs(priceChangePercent) > 10 ? 
+                                ` High volatility detected! ${isPositiveTrend ? 'Price spiked recently - wait for stabilization' : 'Significant drop - excellent buying opportunity'}` :
+                            Math.abs(priceChangePercent) > 5 ? 
+                                ` Moderate ${isPositiveTrend ? 'increase' : 'decrease'} observed. ${isPositiveTrend ? 'Monitor for potential reversal' : 'Good time to purchase'}` :
+                                ' Price is stable with minimal fluctuation. Safe to buy at current levels.'
+                            }
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Enhanced Product Modal Component
+        const ProductModal = ({ product, onClose }) => {
+            if (!product) return null;
+
+            const lowestPrice = Math.min(...product.prices.map(p => p.price));
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto modal-enter shadow-2xl">
+                        <div className="p-8">
+                            <div className="flex justify-between items-start mb-8">
+                                <h2 className="text-3xl font-bold text-gray-800 gradient-text">{product.name}</h2>
+                                <button 
+                                    onClick={onClose}
+                                    className="text-gray-500 hover:text-gray-700 text-3xl hover:bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center transition-all"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-8 mb-8">
+                                <div>
+                                    <img 
+                                        src={product.image} 
+                                        alt={product.name}
+                                        className="w-full h-80 object-cover rounded-xl shadow-lg"
+                                        onError={(e) => {
+                                            e.target.src = `https://via.placeholder.com/400x300/4ade80/ffffff?text=${encodeURIComponent(product.name)}`;
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <p className="text-gray-600 mb-6 text-lg leading-relaxed">{product.description}</p>
+                                    
+                                    <div className="mb-6">
+                                        <h3 className="text-xl font-semibold mb-4 text-gray-800">Specifications</h3>
+                                        <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                                            {Object.entries(product.specs).map(([key, value]) => (
+                                                <div key={key} className="flex justify-between border-b border-gray-200 pb-2">
+                                                    <span className="text-gray-600 capitalize font-medium">{key}:</span>
+                                                    <span className="font-semibold text-gray-800">{value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mb-8">
+                                <h3 className="text-xl font-semibold mb-6 text-gray-800">Price Comparison</h3>
+                                <div className="space-y-3">
+                                    {product.prices.map((price, index) => (
+                                        <div 
+                                            key={index}
+                                            className={`flex justify-between items-center p-4 rounded-xl transition-all cursor-pointer hover:shadow-lg ${
+                                                price.price === lowestPrice 
+                                                    ? 'bg-gradient-to-r from-green-100 to-green-50 border-2 border-green-300 shadow-lg' 
+                                                    : 'bg-gray-50 hover:bg-gray-100'
+                                            }`}
+                                            onClick={() => window.open(price.url, '_blank')}
+                                        >
+                                            <div className="flex items-center">
+                                                <span className="font-semibold text-lg">{price.store}</span>
+                                                {price.price === lowestPrice && (
+                                                    <span className="ml-3 px-3 py-1 bg-green-500 text-white text-sm rounded-full font-medium animate-pulse">
+                                                        🏆 Best Price
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <span className="text-2xl font-bold text-green-600">₹{price.price}</span>
+                                                <span className="text-sm bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 transition-all">
+                                                    🛒 Buy Now
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <PriceChart priceHistory={product.priceHistory} />
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Watchlist Page Component
+        const WatchlistPage = ({ user, products, watchlist, onToggleWatchlist, onProductClick }) => {
+            const watchlistProducts = products.filter(product => watchlist.includes(product.id));
+
+            return (
+                <div className="page-transition">
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl font-bold text-gray-800 mb-4 gradient-text">
+                            ⭐ My Watchlist
+                        </h1>
+                        <p className="text-xl text-gray-600">
+                            {watchlistProducts.length} products saved for later
+                        </p>
+                    </div>
+
+                    {watchlistProducts.length === 0 ? (
+                        <div className="text-center py-16">
+                            <div className="text-6xl mb-4">💔</div>
+                            <p className="text-gray-500 text-xl mb-2">Your watchlist is empty</p>
+                            <p className="text-gray-400">Start adding products you love to keep track of their prices!</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            {watchlistProducts.map((product, index) => (
+                                <div 
+                                    key={product.id}
+                                    className="fade-in"
+                                    style={{animationDelay: `${index * 0.1}s`}}
+                                >
+                                    <ProductCard 
+                                        product={product} 
+                                        onClick={onProductClick}
+                                        isInWatchlist={true}
+                                        onToggleWatchlist={onToggleWatchlist}
+                                        user={user}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Main App Component
+        const BudgetBuyApp = () => {
+            const [loading, setLoading] = useState(true);
+            const [user, setUser] = useState(null);
+            const [showAuthModal, setShowAuthModal] = useState(false);
+            const [products, setProducts] = useState([]);
+            const [filteredProducts, setFilteredProducts] = useState([]);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedProduct, setSelectedProduct] = useState(null);
+            const [watchlist, setWatchlist] = useState([]);
+            const [currentPage, setCurrentPage] = useState('home');
+            const [selectedCategory, setSelectedCategory] = useState('all');
+
+            useEffect(() => {
+                // Check for existing session
+                const savedUser = localStorage.getItem('budgetbuy_current_user');
+                if (savedUser) {
+                    const userData = JSON.parse(savedUser);
+                    setUser(userData);
+                    setWatchlist(Database.getWatchlist(userData.email));
+                }
+
+                // Simulate loading time
+                setTimeout(() => {
+                    setProducts(mockProducts);
+                    setFilteredProducts(mockProducts);
+                    setLoading(false);
+                }, 2000);
+            }, []);
+
+            useEffect(() => {
+                let filtered = products;
+
+                // Filter by category
+                if (selectedCategory !== 'all') {
+                    filtered = filtered.filter(product => product.category === selectedCategory);
+                }
+
+                // Filter by search term
+                if (searchTerm) {
+                    filtered = filtered.filter(product =>
+                        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        product.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                }
+
+                setFilteredProducts(filtered);
+            }, [searchTerm, products, selectedCategory]);
+
+            const handleLogin = (userData) => {
+                setUser(userData);
+                localStorage.setItem('budgetbuy_current_user', JSON.stringify(userData));
+                setWatchlist(Database.getWatchlist(userData.email));
+            };
+
+            const handleSignOut = () => {
+                setUser(null);
+                setWatchlist([]);
+                localStorage.removeItem('budgetbuy_current_user');
+                setCurrentPage('home');
+            };
+
+            const handleProductClick = (product) => {
+                setSelectedProduct(product);
+            };
+
+            const handleCloseModal = () => {
+                setSelectedProduct(null);
+            };
+
+            const handleToggleWatchlist = (productId) => {
+                if (!user) return;
+
+                const isInWatchlist = watchlist.includes(productId);
+                if (isInWatchlist) {
+                    Database.removeFromWatchlist(user.email, productId);
+                    setWatchlist(prev => prev.filter(id => id !== productId));
+                } else {
+                    Database.addToWatchlist(user.email, productId);
+                    setWatchlist(prev => [...prev, productId]);
+                }
+            };
+
+            const handleCategoryChange = (categoryId) => {
+                setSelectedCategory(categoryId);
+                setSearchTerm(''); // Clear search when changing category
+            };
+
+            if (loading) {
+                return <LoadingScreen />;
+            }
+
+            if (!user) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+                        <div className="text-center max-w-md mx-auto p-8">
+                            <div className="text-6xl mb-6 logo-bounce">🛒</div>
+                            <h1 className="text-4xl font-bold gradient-text mb-4">Welcome to BudgetBuy</h1>
+                            <p className="text-gray-600 mb-8 text-lg">
+                                Sign in to create your personalized watchlist and never miss a great deal!
+                            </p>
+                            <button
+                                onClick={() => setShowAuthModal(true)}
+                                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
+                            >
+                                Get Started
+                            </button>
+                        </div>
+                        
+                        <AuthModal 
+                            isOpen={showAuthModal}
+                            onClose={() => setShowAuthModal(false)}
+                            onLogin={handleLogin}
+                        />
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 website-entry magical-glow">
+                    {/* Floating Background Elements */}
+                    <div className="floating-bg">
+                        <div className="floating-element">🛒</div>
+                        <div className="floating-element">💰</div>
+                        <div className="floating-element">🎯</div>
+                        <div className="floating-element">⭐</div>
+                        <div className="floating-element">🔥</div>
+                        <div className="floating-element">💎</div>
+                        <div className="floating-element">🚀</div>
+                        <div className="floating-element">✨</div>
+                    </div>
+
+                    {/* Particle Burst Effect */}
+                    <div className="particle-burst particle-1"></div>
+                    <div className="particle-burst particle-2"></div>
+                    <div className="particle-burst particle-3"></div>
+                    <div className="particle-burst particle-4"></div>
+                    <div className="particle-burst particle-5"></div>
+                    <div className="particle-burst particle-6"></div>
+                    <div className="particle-burst particle-7"></div>
+                    <div className="particle-burst particle-8"></div>
+
+                    {/* Ripple Effect */}
+                    <div className="ripple-container">
+                        <div className="ripple"></div>
+                        <div className="ripple"></div>
+                        <div className="ripple"></div>
+                    </div>
+
+                    <div className="entry-delay-1">
+                        <Header 
+                            user={user}
+                            onSignOut={handleSignOut}
+                            currentPage={currentPage}
+                            onPageChange={setCurrentPage}
+                        />
+                    </div>
+                    
+                    <div className="container mx-auto px-4 py-8 entry-delay-2">
+                        {currentPage === 'home' ? (
+                            <div>
+                                <div className="text-center mb-12 entry-delay-3">
+                                    <div className="mb-6">
+                                        <h1 className="text-6xl font-bold mb-4 gradient-text">
+                                            🛒 BudgetBuy
+                                        </h1>
+                                        <h2 className="text-2xl font-semibold text-gray-700 typewriter">
+                                            Smart Shopping Made Simple
+                                        </h2>
+                                    </div>
+                                    <p className="text-xl text-gray-600 mb-8">Discover amazing savings across all categories</p>
+                                    
+                                    <div className="max-w-2xl mx-auto relative">
+                                        <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                                            <span className="text-blue-500 text-xl">🔍</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder="Search for products, brands, or categories..."
+                                            className="w-full pl-16 pr-6 py-4 text-lg border-2 border-blue-200 rounded-full search-glow focus:ring-4 focus:ring-blue-200 focus:border-blue-400 focus:outline-none bg-white/80 backdrop-blur-sm"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                        <div className="absolute inset-y-0 right-0 pr-6 flex items-center">
+                                            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all cursor-pointer shadow-lg">
+                                                Search
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <CategoryFilter 
+                                        categories={categories}
+                                        selectedCategory={selectedCategory}
+                                        onCategoryChange={handleCategoryChange}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                    {filteredProducts.map((product, index) => (
+                                        <div key={product.id}>
+                                            <ProductCard 
+                                                product={product} 
+                                                onClick={handleProductClick}
+                                                isInWatchlist={watchlist.includes(product.id)}
+                                                onToggleWatchlist={handleToggleWatchlist}
+                                                user={user}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {filteredProducts.length === 0 && (searchTerm || selectedCategory !== 'all') && (
+                                    <div className="text-center py-16">
+                                        <div className="text-6xl mb-4">🔍</div>
+                                        <p className="text-gray-500 text-xl">
+                                            {searchTerm 
+                                                ? `No products found matching "${searchTerm}"` 
+                                                : `No products found in this category`
+                                            }
+                                        </p>
+                                        <p className="text-gray-400 mt-2">Try a different search term or browse other categories</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <WatchlistPage 
+                                user={user}
+                                products={products}
+                                watchlist={watchlist}
+                                onToggleWatchlist={handleToggleWatchlist}
+                                onProductClick={handleProductClick}
+                            />
+                        )}
+                    </div>
+
+                    <ProductModal 
+                        product={selectedProduct} 
+                        onClose={handleCloseModal} 
+                    />
+                </div>
+            );
+        };
+
+        ReactDOM.render(<BudgetBuyApp />, document.getElementById('root'));
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979c1e5d04973fb4',t:'MTc1Njk3NDU2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
