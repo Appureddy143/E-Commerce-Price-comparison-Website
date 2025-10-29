@@ -56,7 +56,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Handle database errors
         // Log the error instead of showing it to the user
         error_log("Login database error: " . $e->getMessage());
-        header("Location: login.php?error=An error occurred. Please try again later.");
+        
+        // DEBUGGING: Send the specific database error message back to the login page.
+        // This is not safe for production, but necessary to debug the problem.
+        $errorMessage = "Database Error: " . $e->getMessage();
+        header("Location: login.php?error=" . urlencode($errorMessage));
         exit;
     }
 
