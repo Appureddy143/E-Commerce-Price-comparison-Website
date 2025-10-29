@@ -1,17 +1,12 @@
 <?php
 session_start();
-
-// Security: Check if user is logged in and is an admin
-if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
-    header('Location: login.php');
+// 1. Check if user is logged in AND is an admin
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+    header("Location: login.php?error=Access denied");
     exit;
 }
-
-// Get any feedback messages from the session after adding a product
-$message = isset($_SESSION['message']) ? $_SESSION['message'] : '';
-$message_type = isset($_SESSION['message_type']) ? $_SESSION['message_type'] : '';
-unset($_SESSION['message'], $_SESSION['message_type']);
-
+// This file is just the form, so no database connection is needed here.
+// The connection will be made in add_product_action.php
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,133 +14,94 @@ unset($_SESSION['message'], $_SESSION['message_type']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Product - Admin Panel</title>
-    <link rel="stylesheet" href="panel_style.css?v=1.4">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-/* --- Add Product Form Styles (for add_product.php) --- */
-.form-container {
-    background-color: #ffffff;
-    padding: 2rem 3rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    max-width: 700px;
-    margin: 2rem auto; /* Center the form on the page */
-}
-
-.form-container h2 {
-    text-align: center;
-    margin-bottom: 2rem;
-    font-size: 2rem;
-    color: #333;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #555;
-}
-
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-family: 'Inter', sans-serif;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    box-sizing: border-box; /* Ensures padding doesn't affect width */
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.form-group textarea {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.btn-form {
-    display: block;
-    width: 100%;
-    padding: 0.9rem;
-    border: none;
-    background-color: #4f46e5;
-    color: white;
-    font-size: 1.1rem;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin-top: 1rem;
-}
-
-.btn-form:hover {
-    background-color: #4338ca;
-}
-
-
-
-</style>
+    <link rel="stylesheet" href="panel_style.css">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box; /* Important */
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .btn-submit {
+            display: inline-block;
+            background-color: #16a34a;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .btn-submit:hover {
+            background-color: #15803d;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <a class="nav-brand" href="admin_panel.php">Admin<span class="highlight">Panel</span></a>
-            <div class="nav-links">
-                <a href="admin_panel.php">Home</a>
-                <a href="logout.php" class="btn-logout">Logout</a>
-            </div>
-        </div>
-    </nav>
+    <header class="panel-header">
+        <h1><a href="admin_panel.php">Admin Panel - Add Product</a></h1>
+        <nav>
+            <a href="profile.php">Profile</a>
+            <a href="logout.php">Logout</a>
+        </nav>
+    </header>
 
-    <main class="container">
-        <!-- Display any success or error messages -->
-        <?php if ($message): ?>
-            <div class="message <?php echo $message_type; ?>">
-                <?php echo htmlspecialchars($message); ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- Section to Add New Products -->
+    <main>
         <div class="form-container">
-            <h2>Add New Product Price</h2>
-            <p>This form will add a new row to your <strong>prices.xlsx</strong> file.</p>
-            <form action="add_product_action.php" method="POST" class="add-product-form">
+            <h3>Add a New Product to the Database</h3>
+            
+            <?php
+            // Show error messages if any
+            if (isset($_GET['error'])) {
+                echo '<p class="error-message">' . htmlspecialchars($_GET['error']) . '</p>';
+            }
+            if (isset($_GET['success'])) {
+                echo '<p class="success-message">' . htmlspecialchars($_GET['success']) . '</p>';
+            }
+            ?>
+
+            <form action="add_product_action.php" method="POST">
                 <div class="form-group">
-                    <label for="product_name">Product Name</label>
-                    <input type="text" id="product_name" name="product_name" placeholder="e.g., iPhone 15" required>
-                </div>
-                <div class="form-group">
-                    <label for="store">Store</label>
-                    <input type="text" id="store" name="store" placeholder="e.g., Amazon, Flipkart, Croma" required>
-                </div>
-                <div class="form-group">
-                    <label for="price">Price (INR)</label>
-                    <input type="number" id="price" name="price" placeholder="e.g., 71999" required>
-                </div>
-                <div class="form-group">
-                    <label for="url">Product URL</label>
-                    <input type="url" id="url" name="url" placeholder="https://..." required>
-                </div>
-                 <div class="form-group">
-                    <label for="image_url">Image URL</label>
-                    <input type="url" id="image_url" name="image_url" placeholder="https://..." required>
+                    <label for="name">Product Name</label>
+                    <input type="text" id="name" name="name" required>
                 </div>
                 <div class="form-group">
                     <label for="description">Description</label>
-                    <input type="text" id="description" name="description" required>
+                    <textarea id="description" name="description"></textarea>
                 </div>
-                <button type="submit" class="btn-form">Add to Excel Sheet</button>
+                <div class="form-group">
+                    <label for="image_url">Image URL</label>
+                    <input type="text" id="image_url" name="image_url" placeholder="https://...">
+                </div>
+                 <div class="form-group">
+                    <label for="category">Category</label>
+                    <input type="text" id="category" name="category" placeholder="e.g., Electronics">
+                </div>
+                <button type="submit" class="btn-submit">Add Product</button>
             </form>
         </div>
     </main>
