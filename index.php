@@ -1,3 +1,17 @@
+<?php
+session_start();
+
+// Check if the user is already logged in
+if (isset($_SESSION['user_id'])) {
+    // Redirect based on admin status
+    if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
+        header("Location: admin_panel.php");
+    } else {
+        header("Location: user_panel.php");
+    }
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
