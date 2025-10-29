@@ -1,18 +1,13 @@
 <?php
 session_start();
-// 1. Include the new PostgreSQL connection file
-require 'db_connect.php'; // This now provides the $pdo object
-// 2. Include the updated activity logger
-require 'user_activity.php'; // This now requires $pdo
+// Use __DIR__ for a robust path to db_connect.php
+require __DIR__ . '/db_connect.php'; 
+require __DIR__ . '/user_activity.php';
 
-// Check if already logged in
-if (isset($_SESSION['user_id'])) {
-    header("Location: user_panel.php");
-    exit;
-}
-
+// Check if the form was submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = trim($_POST['email']);
+    
+    $email = $_POST['email'];
     $password = $_POST['password'];
 
     if (empty($email) || empty($password)) {
@@ -21,28 +16,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     try {
-        // 3. Use $pdo and a prepared statement (?)
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        // Prepare statement to find user by email
+        // We also select the profile_photo here to add it to the session
+        $sql = "SELECT id, name, email, password_hash, is_admin, profile_photo FROM users WHERE email = ?";
+        $stmt = $pdo->prepare($sql);
         $stmt->execute([$email]);
-        $user = $stmt->fetch();
+        
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Check if user exists and password is correct
-        if ($user && password_verify($password, $user['password'])) {
-            // Password is correct! Start the session.
-            session_regenerate_id(true); // Security best practice
+        // Check if user exists AND verify the password
+        if ($user && password_verify($password, $user['password_hash'])) {
+            
+            // Password is correct! Start the user session.
+            session_regenerate_id(true); // Regenerate session ID for security
+            
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['name'] = $user['name'];
-            $_SESSION['is_admin'] = (bool)$user['is_admin']; // Ensure it's a boolean
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['is_admin'] = $user['is_admin'];
+            
+            // FIX: Add the profile_photo to the session
+            // This will fix the 'Undefined array key' warning in user_panel.php
+            $_SESSION['profile_photo'] = $user['profile_photo'];
 
-            // 4. Log activity using the new $pdo object
-            log_activity($pdo, $user['id'], 'login');
+            // Log the login activity
+            log_user_activity($pdo, $user['id'], 'login');
 
-            // Redirect based on admin status
-            if ($_SESSION['is_admin']) {
-                header("Location: admin_panel.php");
-            } else {
-                header("Location: user_panel.php");
-            }
+            // Redirect to the user panel
+            header("Location: user_panel.php");
             exit;
 
         } else {
@@ -53,14 +54,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     } catch (PDOException $e) {
         // Handle database errors
-        error_log("Login error: " . $e->getMessage()); // Log for developer
-        header("Location: login.php?error=An internal error occurred. Please try again later.");
+        // Log the error instead of showing it to the user
+        error_log("Login database error: " . $e->getMessage());
+        header("Location: login.php?error=An error occurred. Please try again later.");
         exit;
     }
 
 } else {
-    // Not a POST request
+    // If not a POST request, redirect to login page
     header("Location: login.php");
     exit;
 }
 ?>
+
