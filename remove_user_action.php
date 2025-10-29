@@ -1,68 +1,53 @@
 <?php
 session_start();
-include 'db_connect.php';
+// 1. Include the new PostgreSQL connection
+require 'db_connect.php'; // Provides $pdo
 
-// Security: Check if user is logged in and is an admin
-if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
-    header('Location: login.php');
+// 2. Check if user is logged in AND is an admin
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+    header("Location: login.php?error=Access denied");
     exit;
 }
 
-// Check if the form was submitted with a user_id to delete
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
-    $user_id_to_delete = (int)$_POST['user_id'];
+// 3. Check if it's a POST request and user_id is set
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['user_id'])) {
+    
+    $user_id_to_delete = $_POST['user_id'];
+    $admin_id = $_SESSION['user_id'];
 
-    // --- Security Precaution ---
-    // Prevent the admin from deleting their own account
-    if ($user_id_to_delete === $_SESSION['id']) {
-        $_SESSION['message'] = 'You cannot remove your own account.';
-        $_SESSION['message_type'] = 'error';
-        header('Location: admin_panel.php');
+    // 4. Admins cannot delete themselves
+    if ($user_id_to_delete == $admin_id) {
+        header("Location: admin_panel.php?error=You cannot remove yourself.");
         exit;
     }
 
-    // --- Database Deletion ---
-    // Prepare a statement to prevent SQL injection
-    $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
-    if ($stmt) {
-        // Bind the user ID to the placeholder
-        $stmt->bind_param("i", $user_id_to_delete);
+    // 5. Use $pdo to delete the user
+    try {
+        // We might need to delete related data first (e.g., history) if
+        // foreign keys are set to 'ON DELETE RESTRICT'
+        // For Postgres with 'ON DELETE CASCADE', this is simpler.
+        // Assuming cascade delete is set up in `price_postgres.sql`
         
-        // Execute the statement
-        if ($stmt->execute()) {
-            // Check if any row was actually deleted
-            if ($stmt->affected_rows > 0) {
-                $_SESSION['message'] = 'User has been successfully removed.';
-                $_SESSION['message_type'] = 'success';
-            } else {
-                $_SESSION['message'] = 'Could not find the specified user to remove.';
-                $_SESSION['message_type'] = 'error';
-            }
+        $sql = "DELETE FROM users WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        
+        if ($stmt->execute([$user_id_to_delete])) {
+            header("Location: admin_panel.php?success=User removed successfully.");
+            exit;
         } else {
-            // Handle execution errors
-            $_SESSION['message'] = 'Error executing the delete command: ' . $stmt->error;
-            $_SESSION['message_type'] = 'error';
+            header("Location: admin_panel.php?error=Failed to remove user.");
+            exit;
         }
-        
-        // Close the statement
-        $stmt->close();
-    } else {
-        // Handle preparation errors
-        $_SESSION['message'] = 'Error preparing the delete command: ' . $conn->error;
-        $_SESSION['message_type'] = 'error';
+
+    } catch (PDOException $e) {
+        error_log("Remove user error: " . $e->getMessage());
+        header("Location: admin_panel.php?error=Database error: " . $e->getMessage());
+        exit;
     }
 
 } else {
-    // Handle cases where the page is accessed directly or form is incomplete
-    $_SESSION['message'] = 'Invalid request. Please use the remove button from the admin panel.';
-    $_SESSION['message_type'] = 'error';
+    // Not a valid request
+    header("Location: admin_panel.php");
+    exit;
 }
-
-// Close the database connection
-$conn->close();
-
-// Always redirect back to the admin panel to show the result
-header('Location: admin_panel.php');
-exit;
 ?>
-
