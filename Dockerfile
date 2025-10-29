@@ -7,7 +7,8 @@ RUN apt-get update \
       libzip-dev \
       unzip \
       git \
-      && docker-php-ext-install pdo_mysql mysqli zip \
+      libpq-dev \
+ && docker-php-ext-install pdo_pgsql pgsql zip \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
@@ -15,13 +16,11 @@ RUN apt-get update \
 RUN a2enmod rewrite
 
 # Copy source code into Apache document root
-# Use --chown so files are owned by www-data
 COPY --chown=www-data:www-data . /var/www/html
 
 WORKDIR /var/www/html
 
 # If composer.phar exists in repo, use it to install dependencies (if composer.json present)
-# If your repo does not include composer.phar, you can uncomment the alternate "install composer" lines below.
 RUN if [ -f composer.phar ] && [ -f composer.json ]; then \
       php composer.phar install --no-dev --no-interaction --optimize-autoloader || true; \
     fi
@@ -32,11 +31,11 @@ RUN if [ -f composer.phar ] && [ -f composer.json ]; then \
 #  && php -r "unlink('composer-setup.php');" \
 #  && if [ -f composer.json ]; then composer install --no-dev --no-interaction --optimize-autoloader; fi
 
-# Make sure permissions are reasonable for uploads / runtime (adjust paths as needed)
+# Set file permissions
 RUN chown -R www-data:www-data /var/www/html \
  && chmod -R 755 /var/www/html
 
-# Copy entrypoint (will adjust Apache to honor $PORT)
+# Copy entrypoint (adjusts Apache to honor $PORT)
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
