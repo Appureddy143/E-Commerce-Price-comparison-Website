@@ -1,70 +1,46 @@
--- This SQL script creates the database and all necessary tables.
--- You can run this entire script at once in phpMyAdmin.
+<?php
+// db_connect.php
+// Updated to connect to a PostgreSQL database (like Neon)
+// This code expects an environment variable 'DATABASE_URL'
+// In Render.com, you will set this environment variable to the connection string from Neon.
 
--- --------------------------------------------------------
---                  DATABASE CREATION
--- --------------------------------------------------------
+$pdo = null;
 
--- Create the database if it doesn't already exist to prevent errors.
-CREATE DATABASE IF NOT EXISTS `pricecomp_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+try {
+    // Get the database URL from the environment variable
+    $db_url = getenv('DATABASE_URL');
 
--- Select the newly created database to use for the next commands.
-USE `pricecomp_db`;
+    if ($db_url === false) {
+        die("Error: DATABASE_URL environment variable is not set.");
+    }
 
--- --------------------------------------------------------
---                  TABLE CREATION
--- --------------------------------------------------------
+    // Parse the connection string
+    $db_parts = parse_url($db_url);
 
--- Set the default time zone to prevent timestamp issues.
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
+    $host = $db_parts['host'];
+    $port = $db_parts['port'];
+    $dbname = ltrim($db_parts['path'], '/');
+    $user = $db_parts['user'];
+    $pass = $db_parts['pass'];
 
---
--- Table structure for table `users`
--- This table will store all user information, including their role.
---
-CREATE TABLE `users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `gender` varchar(10) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `profile_photo` varchar(255) DEFAULT 'default.png',
-  `role` varchar(10) NOT NULL DEFAULT 'user',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    // Create the DSN (Data Source Name) for PostgreSQL
+    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;user=$user;password=$pass";
 
---
--- Table structure for table `history`
--- This table will store the search history for each user.
---
-CREATE TABLE `history` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `search_term` varchar(255) NOT NULL,
-  `searched_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    // Set PDO options
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ];
 
--- --------------------------------------------------------
---                  TABLE CONSTRAINTS
--- --------------------------------------------------------
+    // Create a new PDO instance
+    $pdo = new PDO($dsn);
 
---
--- Constraints for table `history`
--- This links the `history` table to the `users` table.
--- If a user is deleted, all of their search history will also be deleted.
---
-ALTER TABLE `history`
-  ADD CONSTRAINT `history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+} catch (PDOException $e) {
+    // Handle connection error
+    die("Database connection failed: " . $e->getMessage());
+}
 
-COMMIT;
-
-
-ALTER TABLE `users`
-ADD `last_login` TIMESTAMP NULL DEFAULT NULL
-AFTER `created_at`;
+// You can now include this file and use the $pdo variable for your queries.
+// Example: $stmt = $pdo->query("SELECT * FROM users");
+?>
