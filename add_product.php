@@ -1,109 +1,135 @@
 <?php
 session_start();
-// 1. Check if user is logged in AND is an admin
+// Security check: Ensure user is logged in and is an admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     header("Location: login.php?error=Access denied");
     exit;
 }
-// This file is just the form, so no database connection is needed here.
-// The connection will be made in add_product_action.php
+
+// Include the panel header
+$pageTitle = "Add New Product";
+// We don't need db connection for the form itself, but header might
+require __DIR__ . '/db_connect.php'; 
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Product - Admin Panel</title>
+    <title><?php echo htmlspecialchars($pageTitle); ?> - PriceComp</title>
     <link rel="stylesheet" href="panel_style.css">
-    <style>
-        .form-container {
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        .form-group input[type="text"],
-        .form-group textarea {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box; /* Important */
-        }
-        .form-group textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-        .btn-submit {
-            display: inline-block;
-            background-color: #16a34a;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        .btn-submit:hover {
-            background-color: #15803d;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header class="panel-header">
-        <h1><a href="admin_panel.php">Admin Panel - Add Product</a></h1>
-        <nav>
-            <a href="profile.php">Profile</a>
-            <a href="logout.php">Logout</a>
-        </nav>
-    </header>
+    <div class="panel-container">
+        <?php include 'admin_header.php'; // Includes the navigation ?>
 
-    <main>
-        <div class="form-container">
-            <h3>Add a New Product to the Database</h3>
+        <main class="content">
+            <div class="header">
+                <h1><?php echo htmlspecialchars($pageTitle); ?></h1>
+            </div>
             
-            <?php
-            // Show error messages if any
-            if (isset($_GET['error'])) {
-                echo '<p class="error-message">' . htmlspecialchars($_GET['error']) . '</p>';
-            }
-            if (isset($_GET['success'])) {
-                echo '<p class="success-message">' . htmlspecialchars($_GET['success']) . '</p>';
-            }
-            ?>
+            <div class="card">
+                <div class="card-header">
+                    <h2>Product Details</h2>
+                </div>
+                <div class="card-body">
+                    <?php
+                    // Display error or success messages
+                    if (isset($_GET['error'])) {
+                        echo '<div class="message error-message">' . htmlspecialchars($_GET['error']) . '</div>';
+                    }
+                    if (isset($_GET['success'])) {
+                        echo '<div class="message success-message">' . htmlspecialchars($_GET['success']) . '</div>';
+                    }
+                    ?>
+                    
+                    <form action="add_product_action.php" method="POST" id="add-product-form">
+                        <!-- Product Details -->
+                        <div class="form-group">
+                            <label for="name">Product Name</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" id="category" name="category" placeholder="e.g., Electronics, Books">
+                        </div>
+                        <div class="form-group">
+                            <label for="image_url">Image URL</label>
+                            <input type="text" id="image_url" name="image_url" placeholder="https://example.com/image.jpg">
+                        </div>
 
-            <form action="add_product_action.php" method="POST">
-                <div class="form-group">
-                    <label for="name">Product Name</label>
-                    <input type="text" id="name" name="name" required>
+                        <hr class="form-divider">
+
+                        <!-- Dynamic Price Entries -->
+                        <h3>Product Prices</h3>
+                        <div id="price-entries-container">
+                            <!-- Initial Price Entry -->
+                            <div class="price-entry">
+                                <div class="form-group">
+                                    <label>E-commerce Site</label>
+                                    <input type="text" name="store_name[]" placeholder="e.g., Amazon, Flipkart" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Price (₹)</label>
+                                    <input type="number" name="price[]" step="0.01" placeholder="e.g., 499.99" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Product URL</label>
+                                    <input type="text" name="product_url[]" placeholder="Full product link" required>
+                                </div>
+                                <button type="button" class="btn btn-danger btn-small" onclick="removePriceEntry(this)">Remove</button>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-secondary" onclick="addPriceEntry()">Add Another Price</button>
+                        
+                        <hr class="form-divider">
+                        
+                        <button type="submit" class="btn">Save Product</button>
+                    </form>
                 </div>
-                <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea id="description" name="description"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="image_url">Image URL</label>
-                    <input type="text" id="image_url" name="image_url" placeholder="https://...">
-                </div>
-                 <div class="form-group">
-                    <label for="category">Category</label>
-                    <input type="text" id="category" name="category" placeholder="e.g., Electronics">
-                </div>
-                <button type="submit" class="btn-submit">Add Product</button>
-            </form>
-        </div>
-    </main>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    function addPriceEntry() {
+        const container = document.getElementById('price-entries-container');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'price-entry';
+        newEntry.innerHTML = `
+            <div class="form-group">
+                <label>E-commerce Site</label>
+                <input type="text" name="store_name[]" placeholder="e.g., Amazon, Flipkart" required>
+            </div>
+            <div class="form-group">
+                <label>Price (₹)</label>
+                <input type="number" name="price[]" step="0.01" placeholder="e.g., 499.99" required>
+            </div>
+            <div class="form-group">
+                <label>Product URL</label>
+                <input type="text" name="product_url[]" placeholder="Full product link" required>
+            </div>
+            <button type="button" class="btn btn-danger btn-small" onclick="removePriceEntry(this)">Remove</button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function removePriceEntry(button) {
+        // Don't remove the last entry
+        const container = document.getElementById('price-entries-container');
+        if (container.children.length > 1) {
+            button.parentElement.remove();
+        } else {
+            alert("You must add at least one price entry.");
+        }
+    }
+    </script>
 </body>
 </html>
+
