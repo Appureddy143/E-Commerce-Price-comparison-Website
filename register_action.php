@@ -1,66 +1,83 @@
 <?php
-include 'db_connect.php';
+session_start();
+// Use __DIR__ to ensure the path is correct
+require __DIR__ . '/db_connect.php'; 
+require __DIR__ . '/user_activity.php';
 
+// Check if the form was submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['name'];
-    $gender = $_POST['gender'];
-    $email = $_POST['email'];
+    
+    // Get form data and sanitize it
+    $name = trim(htmlspecialchars($_POST['name']));
+    $gender = trim(htmlspecialchars($_POST['gender']));
+    $email = trim(htmlspecialchars($_POST['email']));
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
+    $profile_photo = trim(htmlspecialchars($_POST['profile_photo']));
 
-    // --- Validations ---
+    // --- Form Validations ---
+
+    // 1. Check if passwords match
     if ($password !== $confirm_password) {
-        header("location: register.php?error=Passwords do not match");
+        header("Location: register.php?error=Passwords do not match");
         exit;
     }
 
-    // Check if email already exists
-    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $stmt->store_result();
-    if ($stmt->num_rows > 0) {
-        header("location: register.php?error=Email address already registered");
-        $stmt->close();
+    // 2. Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        header("Location: register.php?error=Invalid email format");
         exit;
     }
-    $stmt->close();
 
-    // --- Profile Photo Upload ---
-    $photo_filename = 'default.png'; // Default photo
-    if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] == 0) {
-        $target_dir = "uploads/";
-        $file_extension = pathinfo($_FILES["profile_photo"]["name"], PATHINFO_EXTENSION);
-        // Create a unique filename to prevent overwriting
-        $photo_filename = uniqid('user_', true) . '.' . $file_extension;
-        $target_file = $target_dir . $photo_filename;
-
-        // Check if image file is a actual image or fake image
-        $check = getimagesize($_FILES["profile_photo"]["tmp_name"]);
-        if($check !== false) {
-            move_uploaded_file($_FILES["profile_photo"]["tmp_name"], $target_file);
-        } else {
-            header("location: register.php?error=File is not an image.");
-            exit;
-        }
-    }
-
-    // --- Insert into Database ---
+    // 3. Hash the password for security
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    $stmt = $conn->prepare("INSERT INTO users (name, gender, email, password, profile_photo) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssss", $name, $gender, $email, $hashed_password, $photo_filename);
+    try {
+        // --- Use the $pdo variable from db_connect.php ---
 
-    if ($stmt->execute()) {
-        // Redirect to login page after successful registration
-        header("location: index.php?success=Registration successful. Please login.");
-        exit;
-    } else {
-        header("location: register.php?error=Something went wrong. Please try again.");
+        // 4. Check if email already exists
+        // Use $pdo, not $conn
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        
+        if ($stmt->fetch()) {
+            // User already exists
+            header("Location: register.php?error=Email already taken");
+            exit;
+        }
+
+        // 5. Insert the new user into the database
+        // Use $pdo, not $conn
+        $stmt = $pdo->prepare("INSERT INTO users (name, gender, email, password, profile_photo) VALUES (?, ?, ?, ?, ?)");
+        
+        // Execute the statement with all parameters
+        if ($stmt->execute([$name, $gender, $email, $hashed_password, $profile_photo])) {
+            // Get the new user's ID
+            $user_id = $pdo->lastInsertId();
+            
+            // Log this activity
+            log_activity($pdo, $user_id, "User registered");
+
+            // Redirect to login page with a success message
+            header("Location: login.php?success=Registration successful! Please login.");
+            exit;
+        } else {
+            header("Location: register.php?error=Registration failed. Please try again.");
+            exit;
+        }
+
+    } catch (PDOException $e) {
+        // Handle database errors
+        // Log the error instead of showing it to the user
+        error_log("Database error: " . $e->getMessage());
+        header("Location: register.php?error=An internal error occurred. Please try again later.");
         exit;
     }
 
-    $stmt->close();
+} else {
+    // If someone tries to access this page directly without POST data
+    header("Location: register.php");
+    exit;
 }
-$conn->close();
 ?>
+
