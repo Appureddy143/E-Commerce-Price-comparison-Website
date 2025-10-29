@@ -27,7 +27,7 @@ $avatar_path_with_fallback = $avatar_path . "' onerror='this.onerror=null;this.s
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Panel - PriceComp</title>
     <!-- Link to your panel_style.css -->
-    <link rel="stylesheet" href="panel_style.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Simple icon library for search icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -163,3 +163,4 @@ $avatar_path_with_fallback = $avatar_path . "' onerror='this.onerror=null;this.s
 
 </body>
 </html>
+
