@@ -1,8 +1,8 @@
 <?php
 // db_connect.php
-// Updated to connect to a PostgreSQL database (like Neon)
-// This code expects an environment variable 'DATABASE_URL'
-// In Render.com, you will set this environment variable to the connection string from Neon.
+// Connects to a PostgreSQL database (like Neon)
+// Expects an environment variable 'DATABASE_URL'.
+// In Render, set DATABASE_URL to your Neon connection string.
 
 $pdo = null;
 
@@ -18,13 +18,13 @@ try {
     $db_parts = parse_url($db_url);
 
     $host = $db_parts['host'];
-    $port = $db_parts['port'];
+    $port = $db_parts['port'] ?? 5432; // default to 5432 if not specified
     $dbname = ltrim($db_parts['path'], '/');
     $user = $db_parts['user'];
     $pass = $db_parts['pass'];
 
-    // Create the DSN (Data Source Name) for PostgreSQL
-    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;user=$user;password=$pass";
+    // Build DSN (Data Source Name)
+    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=require";
 
     // Set PDO options
     $options = [
@@ -33,14 +33,11 @@ try {
         PDO::ATTR_EMULATE_PREPARES   => false,
     ];
 
-    // Create a new PDO instance
-    $pdo = new PDO($dsn);
+    // Create PDO instance
+    $pdo = new PDO($dsn, $user, $pass, $options);
 
 } catch (PDOException $e) {
     // Handle connection error
     die("Database connection failed: " . $e->getMessage());
 }
-
-// You can now include this file and use the $pdo variable for your queries.
-// Example: $stmt = $pdo->query("SELECT * FROM users");
 ?>
