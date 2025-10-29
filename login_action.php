@@ -18,14 +18,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     try {
         // Prepare statement to find user by email
         // We also select the profile_photo here to add it to the session
-        $sql = "SELECT id, name, email, password_hash, is_admin, profile_photo FROM users WHERE email = ?";
+        
+        // FIX: Changed "password_hash" to "password" to match your database schema
+        $sql = "SELECT id, name, email, password, is_admin, profile_photo FROM users WHERE email = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$email]);
         
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Check if user exists AND verify the password
-        if ($user && password_verify($password, $user['password_hash'])) {
+        // FIX: Changed "password_hash" to "password" to match your database schema
+        if ($user && password_verify($password, $user['password'])) {
             
             // Password is correct! Start the user session.
             session_regenerate_id(true); // Regenerate session ID for security
