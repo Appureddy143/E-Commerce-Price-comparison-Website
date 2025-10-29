@@ -30,5 +30,5 @@ function log_user_activity($pdo, $user_id, $action, $details = null) {
         error_log("Failed to log user activity: " . $e->getMessage());
     }
 }
-?>
+// We remove the final ?> tag to prevent "headers already sent" errors.
 
