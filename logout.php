@@ -1,31 +1,26 @@
 <?php
+// Start the session to access session variables
 session_start();
 
-// 1. Include necessary files for logging
-require 'db_connect.php'; // Provides $pdo
-require 'user_activity.php'; // Provides log_activity()
+// Include the database connection and the activity logger
+// Use __DIR__ for reliable pathing
+require __DIR__ . '/db_connect.php';
+require __DIR__ . '/user_activity.php';
 
-// 2. Log the logout activity *before* destroying the session
-if (isset($_SESSION['user_id'])) {
-    log_activity($pdo, $_SESSION['user_id'], 'logout');
+// Check if the user is logged in before trying to log their activity
+if (isset($_SESSION['user_id']) && isset($pdo)) {
+    // Call the correct function name: log_user_activity()
+    log_user_activity($pdo, $_SESSION['user_id'], 'logout');
 }
 
-// 3. Unset all session variables
+// Unset all session variables
 $_SESSION = array();
 
-// 4. Destroy the session cookie
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000,
-        $params["path"], $params["domain"],
-        $params["secure"], $params["httponly"]
-    );
-}
-
-// 5. Finally, destroy the session
+// Destroy the session
 session_destroy();
 
-// 6. Redirect to login page
-header("Location: login.php?success=You have been logged out.");
+// Redirect to the login page
+header("Location: login.php");
 exit;
 ?>
+
