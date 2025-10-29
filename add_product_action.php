@@ -1,78 +1,60 @@
 <?php
 session_start();
-require 'vendor/autoload.php'; // Load the PhpSpreadsheet library
+// 1. Include the new PostgreSQL connection
+require 'db_connect.php'; // Provides $pdo
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-
-// Security: Check if the user is logged in and is an admin.
-if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
-    header('Location: login.php');
+// 2. Check if user is logged in AND is an admin
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+    header("Location: login.php?error=Access denied");
     exit;
 }
 
-// Check if the request is a POST request (i.e., the form was submitted).
+// 3. Check if it's a POST request
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    
-    // --- Step 1: Sanitize and Validate Form Data ---
-    $productName = trim($_POST['product_name']);
-    $store = trim($_POST['store']);
-    $price = trim($_POST['price']);
-    $url = trim($_POST['url']);
-    $imageUrl = trim($_POST['image_url']);
+
+    // Get form data
+    $name = trim($_POST['name']);
     $description = trim($_POST['description']);
-    
-    // Simple validation to ensure required fields are not empty.
-    if (empty($productName) || empty($store) || empty($price) || empty($url) || empty($imageUrl) || empty($description)) {
-        $_SESSION['message'] = "All fields are required. Please fill out the entire form.";
-        $_SESSION['message_type'] = 'error';
-        // **UPDATED:** Redirect back to the new form page.
-        header('Location: add_product.php');
+    $image_url = trim($_POST['image_url']);
+    $category = trim($_POST['category']);
+
+    // 4. Validate data
+    if (empty($name) || empty($category)) {
+        header("Location: add_product.php?error=Product Name and Category are required");
         exit;
     }
-    
-    // --- Step 2: Write the New Data to the Excel File ---
-    $filePath = 'prices.xlsx';
-    
-    try {
-        // Load the existing spreadsheet.
-        $spreadsheet = IOFactory::load($filePath);
-        $sheet = $spreadsheet->getActiveSheet();
-        
-        // Find the first empty row to append the new data.
-        $newRow = $sheet->getHighestRow() + 1;
-        
-        // **CORRECTION:** Writing data to the correct columns (B, C, D, E, F, G).
-        // We leave column A empty to match the existing format.
-        $sheet->setCellValue('B' . $newRow, $productName);
-        $sheet->setCellValue('C' . $newRow, $store);
-        $sheet->setCellValue('D' . $newRow, $price);
-        $sheet->setCellValue('E' . $newRow, $url);
-        $sheet->setCellValue('F' . $newRow, $imageUrl);
-        $sheet->setCellValue('G' . $newRow, $description);
-        
-        // Create a writer object to save the changes.
-        $writer = new Xlsx($spreadsheet);
-        $writer->save($filePath);
-        
-        // --- Step 3: Set Success Message and Redirect ---
-        $_SESSION['message'] = "Product price for '" . htmlspecialchars($productName) . "' has been added successfully!";
-        $_SESSION['message_type'] = 'success';
-        
-    } catch (Exception $e) {
-        // Handle potential errors, such as file permission issues.
-        $_SESSION['message'] = "An error occurred while writing to the Excel file: " . $e->getMessage();
-        $_SESSION['message_type'] = 'error';
+
+    // Use placeholder if image URL is empty
+    if (empty($image_url)) {
+        $image_url = 'https://placehold.co/300x300/e0e0e0/333?text=' . urlencode(substr($name, 0, 10));
     }
-    
-    // **UPDATED:** Always redirect back to the new form page.
-    header('Location: add_product.php');
-    exit;
+
+    // 5. Insert into database using $pdo
+    try {
+        $sql = "INSERT INTO products (name, description, image_url, category) VALUES (?, ?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        
+        // Execute the statement
+        if ($stmt->execute([$name, $description, $image_url, $category])) {
+            // Success
+            header("Location: add_product.php?success=Product added successfully!");
+            exit;
+        } else {
+            // Fail
+            header("Location: add_product.php?error=Failed to add product.");
+            exit;
+        }
+
+    } catch (PDOException $e) {
+        // Handle database errors
+        error_log("Add product error: " . $e->getMessage()); // Log for developer
+        header("Location: add_product.php?error=Database error: " . $e->getMessage());
+        exit;
+    }
+
 } else {
-    // If someone tries to access this page directly, redirect them.
-    header('Location: admin_panel.php');
+    // Not a POST request
+    header("Location: add_product.php");
     exit;
 }
 ?>
-
-    
