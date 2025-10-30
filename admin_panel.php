@@ -20,12 +20,14 @@ try {
     $productCount = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
 
     // Get all users (except the current admin)
-    $stmt_users = $pdo->prepare("SELECT id, name, email, is_admin, created_at FROM users WHERE id != ? ORDER BY created_at DESC");
+    // Removed 'created_at' from query
+    $stmt_users = $pdo->prepare("SELECT id, name, email, is_admin FROM users WHERE id != ? ORDER BY id DESC");
     $stmt_users->execute([$_SESSION['user_id']]);
     $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 
     // Get all products
-    $stmt_products = $pdo->query("SELECT id, name, category, created_at FROM products ORDER BY created_at DESC");
+    // Removed 'created_at' from query
+    $stmt_products = $pdo->query("SELECT id, name, category FROM products ORDER BY id DESC");
     $products = $stmt_products->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (Exception $e) {
@@ -91,13 +93,13 @@ try {
                                     <th>ID</th>
                                     <th>Name</th>
                                     <th>Category</th>
-                                    <th>Date Added</th>
+                                    <!-- Removed Date Added column -->
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($products)): ?>
                                     <tr>
-                                        <td colspan="4">No products found.</td>
+                                        <td colspan="3">No products found.</td> <!-- Colspan changed to 3 -->
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($products as $product): ?>
@@ -105,7 +107,7 @@ try {
                                         <td><?php echo htmlspecialchars($product['id']); ?></td>
                                         <td><?php echo htmlspecialchars($product['name']); ?></td>
                                         <td><?php echo htmlspecialchars($product['category']); ?></td>
-                                        <td><?php echo date('Y-m-d', strtotime($product['created_at'])); ?></td>
+                                        <!-- Removed Date Added data cell -->
                                     </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -130,14 +132,14 @@ try {
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Role</th>
-                                    <th>Date Joined</th>
+                                    <!-- Removed Date Joined column -->
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($users)): ?>
                                     <tr>
-                                        <td colspan="6">No other users found.</td>
+                                        <td colspan="5">No other users found.</td> <!-- Colspan changed to 5 -->
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($users as $user): ?>
@@ -149,10 +151,10 @@ try {
                                             <?php if ($user['is_admin']): ?>
                                                 <span class="badge admin-badge">Admin</span>
                                             <?php else: ?>
-                                                <span class="badge user-badge">User</span>
+                                                <span classs="badge user-badge">User</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?php echo date('Y-m-d', strtotime($user['created_at'])); ?></td>
+                                        <!-- Removed Date Joined data cell -->
                                         <td>
                                             <?php if (!$user['is_admin']): // Only show remove for non-admins ?>
                                                 <a href="remove_user_action.php?id=<?php echo $user['id']; ?>" 
