@@ -1,59 +1,92 @@
 <?php
 session_start();
-// 1. Include the new PostgreSQL connection
-require 'db_connect.php'; // Provides $pdo
-
-// 2. Check if user is logged in AND is an admin
+// Security check: Ensure user is logged in and is an admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     header("Location: login.php?error=Access denied");
     exit;
 }
 
-// 3. Check if it's a POST request
+// Database connection
+require __DIR__ . '/db_connect.php'; 
+
+// Check if $pdo was created
+if (!$pdo) {
+    header("Location: add_product.php?error=Database connection failed.");
+    exit;
+}
+
+// Check if form data is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    // Get form data
-    $name = trim($_POST['name']);
-    $description = trim($_POST['description']);
-    $image_url = trim($_POST['image_url']);
-    $category = trim($_POST['category']);
+    // Get product details
+    $name = $_POST['name'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $category = $_POST['category'] ?? '';
+    $image_url = $_POST['image_url'] ?? '';
+    $prices_array = $_POST['prices'] ?? [];
 
-    // 4. Validate data
-    if (empty($name) || empty($category)) {
-        header("Location: add_product.php?error=Product Name and Category are required");
+    // Basic validation
+    if (empty($name) || empty($description) || empty($category) || empty($image_url) || empty($prices_array)) {
+        header("Location: add_product.php?error=All fields are required.");
         exit;
     }
 
-    // Use placeholder if image URL is empty
-    if (empty($image_url)) {
-        $image_url = 'https://placehold.co/300x300/e0e0e0/333?text=' . urlencode(substr($name, 0, 10));
-    }
-
-    // 5. Insert into database using $pdo
     try {
-        $sql = "INSERT INTO products (name, description, image_url, category) VALUES (?, ?, ?, ?)";
-        $stmt = $pdo->prepare($sql);
+        // Start a transaction
+        $pdo->beginTransaction();
+
+        // 1. Insert into 'products' table
+        $sql_product = "INSERT INTO products (name, description, category, image_url) VALUES (?, ?, ?, ?) RETURNING id";
+        $stmt_product = $pdo->prepare($sql_product);
+        $stmt_product->execute([$name, $description, $category, $image_url]);
         
-        // Execute the statement
-        if ($stmt->execute([$name, $description, $image_url, $category])) {
-            // Success
-            header("Location: add_product.php?success=Product added successfully!");
-            exit;
-        } else {
-            // Fail
-            header("Location: add_product.php?error=Failed to add product.");
-            exit;
+        // Get the ID of the newly inserted product
+        $product_id = $stmt_product->fetchColumn();
+
+        if (!$product_id) {
+            throw new Exception("Failed to create product.");
         }
 
-    } catch (PDOException $e) {
-        // Handle database errors
-        error_log("Add product error: " . $e->getMessage()); // Log for developer
-        header("Location: add_product.php?error=Database error: " . $e->getMessage());
+        // 2. Insert into 'prices' and 'price_history' tables
+        $sql_price = "INSERT INTO prices (product_id, store_name, price, url) VALUES (?, ?, ?, ?)";
+        $stmt_price = $pdo->prepare($sql_price);
+
+        $sql_history = "INSERT INTO price_history (product_id, store_name, price) VALUES (?, ?, ?)";
+        $stmt_history = $pdo->prepare($sql_history);
+
+        foreach ($prices_array as $price_entry) {
+            $store_name = $price_entry['store_name'];
+            $price = (float) $price_entry['price'];
+            $url = $price_entry['url'];
+
+            if (!empty($store_name) && $price > 0 && !empty($url)) {
+                // Add to prices table
+                $stmt_price->execute([$product_id, $store_name, $price, $url]);
+                // Add to price_history table
+                $stmt_history->execute([$product_id, $store_name, $price]);
+            }
+        }
+
+        // Commit the transaction
+        $pdo->commit();
+
+        // Redirect back with success message
+        header("Location: add_product.php?success=Product added successfully!");
+        exit;
+
+    } catch (Exception $e) {
+        // Roll back the transaction on error
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        // Redirect back with error message
+        $error_message = urlencode($e->getMessage());
+        header("Location: add_product.php?error=Database error: " . $error_message);
         exit;
     }
 
 } else {
-    // Not a POST request
+    // Not a POST request, redirect to the form page
     header("Location: add_product.php");
     exit;
 }
