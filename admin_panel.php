@@ -4,7 +4,12 @@
 
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
-
+<html>
+    <head>
+        <title> Admin Panel </title>
+        <link rel="stylesheet" href="admin.css">
+    </head>
+    <body>
 <nav class="sidebar">
     <div class="sidebar-header">
         <a href="admin_panel.php" class="sidebar-logo">Admin Panel</a>
@@ -40,3 +45,5 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </ul>
 </nav>
 
+    </body>
+</html>
