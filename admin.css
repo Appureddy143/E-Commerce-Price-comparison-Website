@@ -1,0 +1,242 @@
+/* --- Global & Fonts --- */
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    background-color: #f4f7fa;
+    color: #333;
+}
+
+/* --- Main Admin Layout --- */
+.panel-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.content {
+    flex: 1;
+    padding: 2.5rem;
+    padding-left: 280px; /* Width of sidebar + padding */
+}
+
+/* --- Sidebar (admin_header.php) --- */
+.sidebar {
+    width: 260px; /* Fixed width for the sidebar */
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background-color: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 1.5rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.logo {
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: #111827;
+}
+
+.logo .highlight {
+    color: #4f46e5;
+}
+
+/* --- Sidebar Navigation --- */
+.sidebar-nav {
+    flex: 1;
+    padding-top: 1rem;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav li a {
+    display: flex;
+    align-items: center;
+    padding: 0.9rem 1.5rem;
+    margin: 0.25rem 0.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    color: #374151;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-nav li a .icon {
+    margin-right: 1rem;
+    font-size: 1.2rem;
+    width: 24px; /* Align icons */
+    text-align: center;
+}
+
+.sidebar-nav li a:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+.sidebar-nav li a.active {
+    background-color: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* --- Content Header --- */
+.header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.header h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* --- Cards (for forms/tables) --- */
+.card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+/* --- General Form Styling --- */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-sizing: border-box; /* Important */
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.form-divider {
+    border: 0;
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 2rem 0;
+}
+
+/* --- Add Product Specific (Dynamic Entries) --- */
+.price-entry {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.price-entry .btn-danger {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+}
+
+/* --- Buttons --- */
+.btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #4f46e5;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: #4338ca;
+}
+
+.btn-secondary {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.btn-secondary:hover {
+    background-color: #d1d5db;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* --- Messages --- */
+.message {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.error-message {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.success-message {
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
