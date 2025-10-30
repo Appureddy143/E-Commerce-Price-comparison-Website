@@ -144,7 +144,7 @@ try {
                                     <tr>
                                         <td><?php echo htmlspecialchars($user['id']); ?></td>
                                         <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                        <td><?-php echo htmlspecialchars($user['email']); ?></td>
+                                        <td><?php echo htmlspecialchars($user['email']); ?></td>
                                         <td>
                                             <?php if ($user['is_admin']): ?>
                                                 <span class="badge admin-badge">Admin</span>
