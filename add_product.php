@@ -1,102 +1,130 @@
 <?php
 session_start();
-
-// =======================================
-// 1. SECURITY CHECK: Admin authentication
-// =======================================
+// Security check: Ensure user is logged in and is an admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     header("Location: login.php?error=Access denied");
     exit;
 }
 
-// =======================================
-// 2. INCLUDE HEADER (safe include)
-// =======================================
-$header_path = __DIR__ . '/admin_header.php';
-if (file_exists($header_path)) {
-    include $header_path;
-} else {
-    echo "<!-- Warning: admin_header.php not found. Skipping header include. -->";
-}
-
-// =======================================
-// 3. DATABASE CONNECTION
-// =======================================
+// Database connection
 require __DIR__ . '/db_connect.php'; 
 
+// === NEW: Include Composer's autoloader for Goutte ===
+require __DIR__ . '/vendor/autoload.php';
+use Goutte\Client;
+
+// Check if $pdo was created
 if (!$pdo) {
     header("Location: add_product.php?error=Database connection failed.");
     exit;
 }
 
-// =======================================
-// 4. PROCESS FORM SUBMISSION
-// =======================================
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+// Check if form data is submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    // Collect form inputs safely
-    $name        = trim($_POST['name'] ?? '');
-    $description = trim($_POST['description'] ?? '');
-    $category    = trim($_POST['category'] ?? '');
-    $image_url   = trim($_POST['image_url'] ?? '');
-    $prices_array = $_POST['prices'] ?? [];
+    // Get product details
+    $name = $_POST['name'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $category = $_POST['category'] ?? '';
+    $image_url = $_POST['image_url'] ?? '';
+    // === NEW: This is now just an array of URLs ===
+    $url_array = $_POST['urls'] ?? [];
 
-    // =============================
-    // 4A. BASIC VALIDATION
-    // =============================
-    if (empty($name) || empty($description) || empty($category) || empty($image_url) || empty($prices_array)) {
+    // Basic validation
+    if (empty($name) || empty($description) || empty($category) || empty($image_url) || empty($url_array)) {
         header("Location: add_product.php?error=All fields are required.");
         exit;
     }
 
+    // === NEW: Initialize the Goutte scraping client ===
+    $client = new Client();
+
     try {
-        // Begin transaction
+        // Start a transaction
         $pdo->beginTransaction();
 
-        // =============================
-        // 4B. INSERT INTO 'products'
-        // =============================
-        $sql_product = "INSERT INTO products (name, description, category, image_url)
-                        VALUES (?, ?, ?, ?)
-                        RETURNING id";
+        // 1. Insert into 'products' table
+        $sql_product = "INSERT INTO products (name, description, category, image_url) VALUES (?, ?, ?, ?) RETURNING id";
         $stmt_product = $pdo->prepare($sql_product);
         $stmt_product->execute([$name, $description, $category, $image_url]);
-
+        
         $product_id = $stmt_product->fetchColumn();
 
         if (!$product_id) {
-            throw new Exception("Failed to create product record.");
+            throw new Exception("Failed to create product.");
         }
 
-        // =============================
-        // 4C. INSERT PRICES + HISTORY
-        // =============================
-        $sql_price = "INSERT INTO prices (product_id, store_name, price, url)
-                      VALUES (?, ?, ?, ?)";
+        // 2. Insert into 'prices' and 'price_history' tables
+        $sql_price = "INSERT INTO prices (product_id, store_name, price, url) VALUES (?, ?, ?, ?)";
         $stmt_price = $pdo->prepare($sql_price);
 
-        $sql_history = "INSERT INTO price_history (product_id, store_name, price)
-                        VALUES (?, ?, ?)";
+        $sql_history = "INSERT INTO price_history (product_id, store_name, price) VALUES (?, ?, ?)";
         $stmt_history = $pdo->prepare($sql_history);
 
-        foreach ($prices_array as $entry) {
-            $store_name = trim($entry['store_name'] ?? '');
-            $price      = (float) ($entry['price'] ?? 0);
-            $url        = trim($entry['url'] ?? '');
+        // === NEW: Loop over URLs, scrape, and insert ===
+        foreach ($url_array as $url) {
+            if (empty(trim($url))) continue;
 
-            if (!empty($store_name) && $price > 0 && !empty($url)) {
+            $store_name = "Unknown";
+            $price_text = "0";
+
+            // --- Scraper Logic ---
+            // WARNING: This is fragile and will break when websites update their HTML.
+            try {
+                $crawler = $client->request('GET', $url);
+
+                if (str_contains($url, 'amazon.in')) {
+                    $store_name = 'Amazon';
+                    // Try to find price in different common Amazon selectors
+                    $price_node = $crawler->filter('span.a-price-whole')->first();
+                    if ($price_node->count() === 0) {
+                         $price_node = $crawler->filter('#priceblock_ourprice')->first();
+                    }
+                    if ($price_node->count() > 0) {
+                        $price_text = $price_node->text();
+                    }
+
+                } elseif (str_contains($url, 'flipkart.com')) {
+                    $store_name = 'Flipkart';
+                    $price_node = $crawler->filter('div._30jeq3')->first();
+                     if ($price_node->count() > 0) {
+                        $price_text = $price_node->text();
+                    }
+
+                } elseif (str_contains($url, 'croma.com')) {
+                    $store_name = 'Croma';
+                    // Croma often loads price with JS, but we try the static price
+                    $price_node = $crawler->filter('span.amount')->first();
+                     if ($price_node->count() > 0) {
+                        $price_text = $price_node->text();
+                    }
+                }
+            } catch (Exception $scrape_error) {
+                // Couldn't scrape, but we still save the URL
+                // You can log $scrape_error->getMessage() if you want
+            }
+            // --- End Scraper Logic ---
+
+            // Clean the price text (remove ₹, ,, etc.)
+            $price = (float) preg_replace('/[^0-9.]/', '', $price_text);
+            
+            if ($price > 0) {
+                // Add to prices table
                 $stmt_price->execute([$product_id, $store_name, $price, $url]);
+                // Add to price_history table
                 $stmt_history->execute([$product_id, $store_name, $price]);
             }
         }
 
-        // Commit changes
+        // Commit the transaction
         $pdo->commit();
 
-        header("Location: add_product.php?success=Product added successfully!");
+        // Redirect back with success message
+        header("Location: add_product.php?success=Product added successfully! (Prices scraped)");
         exit;
 
     } catch (Exception $e) {
+        // Roll back the transaction on error
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
@@ -106,54 +134,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
 } else {
-    // =======================================
-    // 5. DISPLAY ADD PRODUCT FORM (optional)
-    // =======================================
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Add Product</title>
-        <link rel="stylesheet" href="styles.css">
-    </head>
-    <body>
-        <h1>Add New Product</h1>
-
-        <?php if (isset($_GET['error'])): ?>
-            <div class="error"><?= htmlspecialchars($_GET['error']) ?></div>
-        <?php elseif (isset($_GET['success'])): ?>
-            <div class="success"><?= htmlspecialchars($_GET['success']) ?></div>
-        <?php endif; ?>
-
-        <form method="POST" action="add_product.php">
-            <label>Product Name:</label><br>
-            <input type="text" name="name" required><br><br>
-
-            <label>Description:</label><br>
-            <textarea name="description" required></textarea><br><br>
-
-            <label>Category:</label><br>
-            <input type="text" name="category" required><br><br>
-
-            <label>Image URL:</label><br>
-            <input type="text" name="image_url" required><br><br>
-
-            <h3>Prices</h3>
-            <!-- Example for multiple store prices -->
-            <div>
-                <label>Store 1 Name:</label><br>
-                <input type="text" name="prices[0][store_name]" required><br>
-                <label>Store 1 Price:</label><br>
-                <input type="number" step="0.01" name="prices[0][price]" required><br>
-                <label>Store 1 URL:</label><br>
-                <input type="text" name="prices[0][url]" required><br><br>
-            </div>
-
-            <button type="submit">Add Product</button>
-        </form>
-    </body>
-    </html>
-    <?php
+    // Not a POST request
+    header("Location: add_product.php");
+    exit;
 }
 ?>
+
