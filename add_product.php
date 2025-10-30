@@ -6,137 +6,105 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['
     exit;
 }
 
-// Database connection
-require __DIR__ . '/db_connect.php'; 
-
-// === NEW: Include Composer's autoloader for Goutte ===
-require __DIR__ . '/vendor/autoload.php';
-use Goutte\Client;
-
-// Check if $pdo was created
-if (!$pdo) {
-    header("Location: add_product.php?error=Database connection failed.");
-    exit;
-}
-
-// Check if form data is submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    // Get product details
-    $name = $_POST['name'] ?? '';
-    $description = $_POST['description'] ?? '';
-    $category = $_POST['category'] ?? '';
-    $image_url = $_POST['image_url'] ?? '';
-    // === NEW: This is now just an array of URLs ===
-    $url_array = $_POST['urls'] ?? [];
-
-    // Basic validation
-    if (empty($name) || empty($description) || empty($category) || empty($image_url) || empty($url_array)) {
-        header("Location: add_product.php?error=All fields are required.");
-        exit;
-    }
-
-    // === NEW: Initialize the Goutte scraping client ===
-    $client = new Client();
-
-    try {
-        // Start a transaction
-        $pdo->beginTransaction();
-
-        // 1. Insert into 'products' table
-        $sql_product = "INSERT INTO products (name, description, category, image_url) VALUES (?, ?, ?, ?) RETURNING id";
-        $stmt_product = $pdo->prepare($sql_product);
-        $stmt_product->execute([$name, $description, $category, $image_url]);
-        
-        $product_id = $stmt_product->fetchColumn();
-
-        if (!$product_id) {
-            throw new Exception("Failed to create product.");
-        }
-
-        // 2. Insert into 'prices' and 'price_history' tables
-        $sql_price = "INSERT INTO prices (product_id, store_name, price, url) VALUES (?, ?, ?, ?)";
-        $stmt_price = $pdo->prepare($sql_price);
-
-        $sql_history = "INSERT INTO price_history (product_id, store_name, price) VALUES (?, ?, ?)";
-        $stmt_history = $pdo->prepare($sql_history);
-
-        // === NEW: Loop over URLs, scrape, and insert ===
-        foreach ($url_array as $url) {
-            if (empty(trim($url))) continue;
-
-            $store_name = "Unknown";
-            $price_text = "0";
-
-            // --- Scraper Logic ---
-            // WARNING: This is fragile and will break when websites update their HTML.
-            try {
-                $crawler = $client->request('GET', $url);
-
-                if (str_contains($url, 'amazon.in')) {
-                    $store_name = 'Amazon';
-                    // Try to find price in different common Amazon selectors
-                    $price_node = $crawler->filter('span.a-price-whole')->first();
-                    if ($price_node->count() === 0) {
-                         $price_node = $crawler->filter('#priceblock_ourprice')->first();
-                    }
-                    if ($price_node->count() > 0) {
-                        $price_text = $price_node->text();
-                    }
-
-                } elseif (str_contains($url, 'flipkart.com')) {
-                    $store_name = 'Flipkart';
-                    $price_node = $crawler->filter('div._30jeq3')->first();
-                     if ($price_node->count() > 0) {
-                        $price_text = $price_node->text();
-                    }
-
-                } elseif (str_contains($url, 'croma.com')) {
-                    $store_name = 'Croma';
-                    // Croma often loads price with JS, but we try the static price
-                    $price_node = $crawler->filter('span.amount')->first();
-                     if ($price_node->count() > 0) {
-                        $price_text = $price_node->text();
-                    }
-                }
-            } catch (Exception $scrape_error) {
-                // Couldn't scrape, but we still save the URL
-                // You can log $scrape_error->getMessage() if you want
-            }
-            // --- End Scraper Logic ---
-
-            // Clean the price text (remove ₹, ,, etc.)
-            $price = (float) preg_replace('/[^0-9.]/', '', $price_text);
-            
-            if ($price > 0) {
-                // Add to prices table
-                $stmt_price->execute([$product_id, $store_name, $price, $url]);
-                // Add to price_history table
-                $stmt_history->execute([$product_id, $store_name, $price]);
-            }
-        }
-
-        // Commit the transaction
-        $pdo->commit();
-
-        // Redirect back with success message
-        header("Location: add_product.php?success=Product added successfully! (Prices scraped)");
-        exit;
-
-    } catch (Exception $e) {
-        // Roll back the transaction on error
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        $error_message = urlencode($e->getMessage());
-        header("Location: add_product.php?error=Database error: " . $error_message);
-        exit;
-    }
-
-} else {
-    // Not a POST request
-    header("Location: add_product.php");
-    exit;
-}
+$pageTitle = "Add New Product";
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($pageTitle); ?> - PriceComp</title>
+    <link rel="stylesheet" href="panel_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="panel-container">
+        <?php include __DIR__ . '/admin_header.php'; // Includes the navigation ?>
 
+        <main class="content">
+            <div class="header">
+                <h1><?php echo htmlspecialchars($pageTitle); ?></h1>
+            </div>
+
+            <?php
+            // Display error or success messages
+            if (isset($_GET['error'])) {
+                echo '<div class="message error-message">' . htmlspecialchars($_GET['error']) . '</div>';
+            }
+            if (isset($_GET['success'])) {
+                echo '<div class="message success-message">' . htmlspecialchars($_GET['success']) . '</div>';
+            }
+            ?>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="add_product_action.php" method="POST" class="form-layout">
+                        
+                        <!-- Product Details -->
+                        <fieldset>
+                            <legend>Product Details</legend>
+                            <div class="input-group">
+                                <label for="name">Product Name</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="description">Description</label>
+                                <textarea id="description" name="description" rows="4" required></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label for="category">Category</label>
+                                <input type="text" id="category" name="category" placeholder="e.g., Electronics, Books" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="image_url">Image URL</label>
+                                <input type="url" id="image_url" name="image_url" placeholder="https://example.com/image.jpg" required>
+                            </div>
+                        </fieldset>
+
+                        <!-- === NEW: Dynamic URL List === -->
+                        <fieldset>
+                            <legend>Product URLs</legend>
+                            <p>Add the full product links from stores like Amazon, Flipkart, Croma, etc.</p>
+                            <div id="url-entries">
+                                <!-- Initial URL Entry -->
+                                <div class="url-entry">
+                                    <div class="input-group">
+                                        <label>Product URL</label>
+                                        <input type="url" name="urls[]" placeholder="https://amazon.com/product-link" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="add-url-btn" class="btn btn-secondary">Add Another URL</button>
+                        </fieldset>
+
+                        <button type="submit" class="btn">Add Product</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('add-url-btn').addEventListener('click', function() {
+            const container = document.getElementById('url-entries');
+            const index = container.getElementsByClassName('url-entry').length;
+
+            const newEntry = document.createElement('div');
+            newEntry.className = 'url-entry';
+            newEntry.innerHTML = `
+                <hr>
+                <div class="input-group">
+                    <label>Product URL ${index + 1}</label>
+                    <input type="url" name="urls[]" placeholder="https://flipkart.com/product-link" required>
+                </div>
+                <button type="button" class="btn btn-danger btn-small" onclick="removeUrlEntry(this)">Remove</button>
+            `;
+            container.appendChild(newEntry);
+        });
+
+        function removeUrlEntry(button) {
+            button.parentElement.remove();
+        }
+    </script>
+</body>
+</html>
