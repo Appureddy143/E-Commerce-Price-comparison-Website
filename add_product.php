@@ -1,128 +1,159 @@
 <?php
 session_start();
-// Security check: Ensure user is logged in and is an admin
+
+// =======================================
+// 1. SECURITY CHECK: Admin authentication
+// =======================================
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     header("Location: login.php?error=Access denied");
     exit;
 }
 
-require __DIR__ . '/db_connect.php';
+// =======================================
+// 2. INCLUDE HEADER (safe include)
+// =======================================
+$header_path = __DIR__ . '/admin_header.php';
+if (file_exists($header_path)) {
+    include $header_path;
+} else {
+    echo "<!-- Warning: admin_header.php not found. Skipping header include. -->";
+}
 
-$pageTitle = "Add New Product";
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?> - PriceComp</title>
-    <link rel="stylesheet" href="panel_style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="panel-container">
-        <?php include __DIR__ . '/admin_header.php'; // Includes the navigation ?>
+// =======================================
+// 3. DATABASE CONNECTION
+// =======================================
+require __DIR__ . '/db_connect.php'; 
 
-        <main class="content">
-            <div class="header">
-                <h1><?php echo htmlspecialchars($pageTitle); ?></h1>
-            </div>
+if (!$pdo) {
+    header("Location: add_product.php?error=Database connection failed.");
+    exit;
+}
 
-            <?php
-            // Display error or success messages
-            if (isset($_GET['error'])) {
-                echo '<div class="message error-message">' . htmlspecialchars($_GET['error']) . '</div>';
-            }
-            if (isset($_GET['success'])) {
-                echo '<div class="message success-message">' . htmlspecialchars($_GET['success']) . '</div>';
-            }
-            ?>
+// =======================================
+// 4. PROCESS FORM SUBMISSION
+// =======================================
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-            <div class="card">
-                <div class="card-body">
-                    <form action="add_product_action.php" method="POST" class="form-layout">
-                        
-                        <!-- Product Details -->
-                        <fieldset>
-                            <legend>Product Details</legend>
-                            <div class="input-group">
-                                <label for="name">Product Name</label>
-                                <input type="text" id="name" name="name" required>
-                            </div>
-                            <div class="input-group">
-                                <label for="description">Description</label>
-                                <textarea id="description" name="description" rows="4" required></textarea>
-                            </div>
-                            <div class="input-group">
-                                <label for="category">Category</label>
-                                <input type="text" id="category" name="category" placeholder="e.g., Electronics, Books" required>
-                            </div>
-                            <div class="input-group">
-                                <label for="image_url">Image URL</label>
-                                <input type="url" id="image_url" name="image_url" placeholder="https://example.com/image.jpg" required>
-                            </div>
-                        </fieldset>
+    // Collect form inputs safely
+    $name        = trim($_POST['name'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $category    = trim($_POST['category'] ?? '');
+    $image_url   = trim($_POST['image_url'] ?? '');
+    $prices_array = $_POST['prices'] ?? [];
 
-                        <!-- Dynamic Prices -->
-                        <fieldset>
-                            <legend>Prices</legend>
-                            <div id="price-entries">
-                                <!-- Initial Price Entry -->
-                                <div class="price-entry">
-                                    <div class="input-group">
-                                        <label>Store Name</label>
-                                        <input type="text" name="prices[0][store_name]" placeholder="e.g., Amazon, Flipkart" required>
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Price</label>
-                                        <input type="number" name="prices[0][price]" step="0.01" placeholder="99.99" required>
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Product URL</label>
-                                        <input type="url" name="prices[0][url]" placeholder="https://amazon.com/product-link" required>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" id="add-price-btn" class="btn btn-secondary">Add Another Price</button>
-                        </fieldset>
+    // =============================
+    // 4A. BASIC VALIDATION
+    // =============================
+    if (empty($name) || empty($description) || empty($category) || empty($image_url) || empty($prices_array)) {
+        header("Location: add_product.php?error=All fields are required.");
+        exit;
+    }
 
-                        <button type="submit" class="btn">Add Product</button>
-                    </form>
-                </div>
-            </div>
-        </main>
-    </div>
+    try {
+        // Begin transaction
+        $pdo->beginTransaction();
 
-    <script>
-        document.getElementById('add-price-btn').addEventListener('click', function() {
-            const container = document.getElementById('price-entries');
-            const index = container.getElementsByClassName('price-entry').length;
+        // =============================
+        // 4B. INSERT INTO 'products'
+        // =============================
+        $sql_product = "INSERT INTO products (name, description, category, image_url)
+                        VALUES (?, ?, ?, ?)
+                        RETURNING id";
+        $stmt_product = $pdo->prepare($sql_product);
+        $stmt_product->execute([$name, $description, $category, $image_url]);
 
-            const newEntry = document.createElement('div');
-            newEntry.className = 'price-entry';
-            newEntry.innerHTML = `
-                <hr>
-                <h4>Price Entry ${index + 1}</h4>
-                <div class="input-group">
-                    <label>Store Name</label>
-                    <input type="text" name="prices[${index}][store_name]" placeholder="e.g., Amazon, Flipkart" required>
-                </div>
-                <div class="input-group">
-                    <label>Price</label>
-                    <input type="number" name="prices[${index}][price]" step="0.01" placeholder="99.99" required>
-                </div>
-                <div class="input-group">
-                    <label>Product URL</label>
-                    <input type="url" name="prices[${index}][url]" placeholder="https://amazon.com/product-link" required>
-                </div>
-                <button type="button" class="btn btn-danger btn-small" onclick="removePriceEntry(this)">Remove</button>
-            `;
-            container.appendChild(newEntry);
-        });
+        $product_id = $stmt_product->fetchColumn();
 
-        function removePriceEntry(button) {
-            button.parentElement.remove();
+        if (!$product_id) {
+            throw new Exception("Failed to create product record.");
         }
-    </script>
-</body>
-</html>
+
+        // =============================
+        // 4C. INSERT PRICES + HISTORY
+        // =============================
+        $sql_price = "INSERT INTO prices (product_id, store_name, price, url)
+                      VALUES (?, ?, ?, ?)";
+        $stmt_price = $pdo->prepare($sql_price);
+
+        $sql_history = "INSERT INTO price_history (product_id, store_name, price)
+                        VALUES (?, ?, ?)";
+        $stmt_history = $pdo->prepare($sql_history);
+
+        foreach ($prices_array as $entry) {
+            $store_name = trim($entry['store_name'] ?? '');
+            $price      = (float) ($entry['price'] ?? 0);
+            $url        = trim($entry['url'] ?? '');
+
+            if (!empty($store_name) && $price > 0 && !empty($url)) {
+                $stmt_price->execute([$product_id, $store_name, $price, $url]);
+                $stmt_history->execute([$product_id, $store_name, $price]);
+            }
+        }
+
+        // Commit changes
+        $pdo->commit();
+
+        header("Location: add_product.php?success=Product added successfully!");
+        exit;
+
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        $error_message = urlencode($e->getMessage());
+        header("Location: add_product.php?error=Database error: " . $error_message);
+        exit;
+    }
+
+} else {
+    // =======================================
+    // 5. DISPLAY ADD PRODUCT FORM (optional)
+    // =======================================
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Add Product</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <h1>Add New Product</h1>
+
+        <?php if (isset($_GET['error'])): ?>
+            <div class="error"><?= htmlspecialchars($_GET['error']) ?></div>
+        <?php elseif (isset($_GET['success'])): ?>
+            <div class="success"><?= htmlspecialchars($_GET['success']) ?></div>
+        <?php endif; ?>
+
+        <form method="POST" action="add_product.php">
+            <label>Product Name:</label><br>
+            <input type="text" name="name" required><br><br>
+
+            <label>Description:</label><br>
+            <textarea name="description" required></textarea><br><br>
+
+            <label>Category:</label><br>
+            <input type="text" name="category" required><br><br>
+
+            <label>Image URL:</label><br>
+            <input type="text" name="image_url" required><br><br>
+
+            <h3>Prices</h3>
+            <!-- Example for multiple store prices -->
+            <div>
+                <label>Store 1 Name:</label><br>
+                <input type="text" name="prices[0][store_name]" required><br>
+                <label>Store 1 Price:</label><br>
+                <input type="number" step="0.01" name="prices[0][price]" required><br>
+                <label>Store 1 URL:</label><br>
+                <input type="text" name="prices[0][url]" required><br><br>
+            </div>
+
+            <button type="submit">Add Product</button>
+        </form>
+    </body>
+    </html>
+    <?php
+}
+?>
