@@ -31,7 +31,6 @@ try {
 // =C. Get Products List
 $products = [];
 try {
-    // Note: We are removing 'created_at' as it caused errors
     $stmt_product_list = $pdo->query("SELECT id, name, category FROM products ORDER BY id DESC LIMIT 10");
     $products = $stmt_product_list->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
@@ -41,7 +40,6 @@ try {
 // =D. Get Users List
 $users = [];
 try {
-    // Note: We are removing 'created_at' as it caused errors
     $stmt_user_list = $pdo->query("SELECT id, name, email FROM users ORDER BY id DESC LIMIT 10");
     $users = $stmt_user_list->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
@@ -66,7 +64,6 @@ try {
         // =======================================
         // 2. INCLUDE SIDEBAR (safe include)
         // =======================================
-        // This includes the admin_header.php file
         $header_path = __DIR__ . '/admin_header.php';
         if (file_exists($header_path)) {
             include $header_path;
@@ -83,6 +80,12 @@ try {
                 <h1>Admin Dashboard</h1>
                 <span>Welcome back, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Admin'); ?>!</span>
             </div>
+
+            <?php if (isset($_GET['success'])): ?>
+                <div class="message success-message"><?php echo htmlspecialchars($_GET['success']); ?></div>
+            <?php elseif (isset($_GET['error'])): ?>
+                <div class="message error-message"><?php echo htmlspecialchars($_GET['error']); ?></div>
+            <?php endif; ?>
 
             <?php if (isset($db_error)): ?>
                 <div class="message error-message">Database error: <?php echo htmlspecialchars($db_error); ?></div>
@@ -138,6 +141,12 @@ try {
                                         <td><?php echo htmlspecialchars($product['category']); ?></td>
                                         <td>
                                             <a href="product_details.php?id=<?php echo $product['id']; ?>" class="btn btn-small btn-secondary">View</a>
+                                            <!-- ADDED THIS BUTTON -->
+                                            <a href="remove_product_action.php?id=<?php echo $product['id']; ?>" 
+                                               class="btn btn-small btn-danger" 
+                                               onclick="return confirm('Are you sure you want to remove this product and all its prices?');">
+                                               Remove
+                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
