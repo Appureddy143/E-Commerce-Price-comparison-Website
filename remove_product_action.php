@@ -42,7 +42,17 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    header("Location: admin_panel.php?error=Failed to remove product: " . $e->getMessage());
+
+    // ==================================================================
+    // FIX: Clean the error message to prevent "new line" header error
+    // ==================================================================
+    $error_message = $e->getMessage();
+    // Remove newline characters
+    $cleaned_message = str_replace(["\r", "\n"], ' ', $error_message);
+    // Truncate to be safe
+    $safe_message = substr($cleaned_message, 0, 200); 
+    
+    header("Location: admin_panel.php?error=" . urlencode("Failed to remove: " . $safe_message));
     exit;
 }
 ?>
