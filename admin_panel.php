@@ -1,367 +1,195 @@
 <?php
-// This file is included by admin_panel.php, add_product.php, etc.
-// Security check is handled by the parent file before including this.
+session_start();
+require __DIR__ . '/db_connect.php';
 
-$current_page = basename($_SERVER['PHP_SELF']);
+// =======================================
+// 1. SECURITY CHECK: Admin authentication
+// =======================================
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+    header("Location: login.php?error=Access denied");
+    exit;
+}
+
+// =A. Get Total Users
+$total_users = 0;
+try {
+    $stmt_users = $pdo->query("SELECT COUNT(*) FROM users");
+    $total_users = $stmt_users->fetchColumn();
+} catch (Exception $e) {
+    // Fail silently, dashboard can still load
+}
+
+// =B. Get Total Products
+$total_products = 0;
+try {
+    $stmt_products = $pdo->query("SELECT COUNT(*) FROM products");
+    $total_products = $stmt_products->fetchColumn();
+} catch (Exception $e) {
+    // Fail silently
+}
+
+// =C. Get Products List
+$products = [];
+try {
+    // Note: We are removing 'created_at' as it caused errors
+    $stmt_product_list = $pdo->query("SELECT id, name, category FROM products ORDER BY id DESC LIMIT 10");
+    $products = $stmt_product_list->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $db_error = $e->getMessage();
+}
+
+// =D. Get Users List
+$users = [];
+try {
+    // Note: We are removing 'created_at' as it caused errors
+    $stmt_user_list = $pdo->query("SELECT id, name, email FROM users ORDER BY id DESC LIMIT 10");
+    $users = $stmt_user_list->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $db_error = $e->getMessage();
+}
+
 ?>
-<html>
-    <head>
-        <title> Admin Panel </title>
-        <link rel="stylesheet" href="admin.css">
-<style>
-/* --- Global Styles --- */
-:root {
-    --primary-color: #4f46e5;
-    --primary-color-dark: #4338ca;
-    --secondary-color: #f3f4f6;
-    --border-color: #e5e7eb;
-    --text-color: #1f2937;
-    --text-light: #6b7280;
-    --white: #ffffff;
-    --danger-color: #ef4444;
-    --danger-color-dark: #dc2626;
-    --success-color: #10b981;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="panel_style.css">
+</head>
+<body>
 
-body {
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: var(--secondary-color);
-    color: var(--text-color);
-    font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-    text-decoration: none;
-    color: var(--primary-color);
-}
-
-a:hover {
-    color: var(--primary-color-dark);
-}
-
-/* --- Panel Layout (Admin) --- */
-.panel-container {
-    display: flex;
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: 260px;
-    background-color: var(--white);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    transition: width 0.3s ease;
-}
-
-.sidebar-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.logo {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-color);
-}
-
-.nav-links {
-    list-style: none;
-    padding: 0;
-    margin: 1rem 0;
-    flex-grow: 1;
-}
-
-.nav-links li a {
-    display: flex;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    color: var(--text-light);
-    font-weight: 500;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.nav-links li a .icon {
-    margin-right: 0.75rem;
-    font-size: 1.2rem;
-}
-
-.nav-links li a:hover {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-}
-
-.nav-links li.active a {
-    background-color: #eef2ff;
-    color: var(--primary-color);
-    border-right: 3px solid var(--primary-color);
-}
-
-.content {
-    flex-grow: 1;
-    padding: 2rem;
-    margin-left: 260px; /* Same as sidebar width */
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-
-/* --- Dashboard Cards (Admin) --- */
-.card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.card {
-    background-color: var(--white);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.card-header {
-    padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.card-header h3 {
-    margin: 0;
-}
-
-.card-body {
-    padding: 1.5rem;
-}
-
-.stat-number {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0;
-}
-
-.stat-label {
-    font-size: 1rem;
-    color: var(--text-light);
-    margin: 0.25rem 0 0 0;
-}
-
-/* --- Tables --- */
-.table-container {
-    overflow-x: auto;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: var(--white);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.data-table th, .data-table td {
-    padding: 1rem 1.2rem;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.data-table th {
-    background-color: #f9fafb;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-light);
-}
-
-.data-table td {
-    font-size: 0.95rem;
-}
-
-.data-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-/* --- Forms (Admin) --- */
-.form-layout fieldset {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.form-layout legend {
-    font-weight: 600;
-    font-size: 1.1rem;
-    padding: 0 0.5rem;
-}
-
-.input-group {
-    margin-bottom: 1.25rem;
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.input-group input[type="text"],
-.input-group input[type="email"],
-.input-group input[type="password"],
-.input-group input[type="url"],
-.input-group input[type="number"],
-.input-group textarea {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-sizing: border-box; /* Important for width: 100% */
-    font-size: 1rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-.input-group input:focus,
-.input-group textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-}
-
-.input-group textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-/* --- Buttons --- */
-.btn {
-    display: inline-block;
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--primary-color);
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: background-color 0.3s;
-}
-
-.btn:hover {
-    background-color: var(--primary-color-dark);
-}
-
-.btn-secondary {
-    background-color: #e5e7eb;
-    color: var(--text-color);
-}
-
-.btn-secondary:hover {
-    background-color: #d1d5db;
-}
-
-.btn-danger {
-    background-color: var(--danger-color);
-}
-
-.btn-danger:hover {
-    background-color: var(--danger-color-dark);
-}
-
-.btn-small {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-}
-
-/* --- Messages --- */
-.message {
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    font-weight: 500;
-}
-
-.error-message {
-    background-color: #fee2e2;
-    color: #b91c1c;
-    border: 1px solid #fca5a5;
-}
-
-.success-message {
-    background-color: #d1fae5;
-    color: #047857;
-    border: 1px solid #6ee7b7;
-}
-
-/* --- Responsive --- */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    .panel-container {
-        flex-direction: column;
-    }
-    
-    .content {
-        margin-left: 0;
-        padding: 1.5rem;
-    }
-}
-</style>
-    </head>
-    <body>
-<nav class="sidebar">
-    <div class="sidebar-header">
-        <a href="admin_panel.php" class="sidebar-logo">Admin Panel</a>
-    </div>
-    <ul class="sidebar-menu">
-        <li <?php echo ($current_page == 'admin_panel.php') ? 'class="active"' : ''; ?>>
-            <a href="admin_panel.php">
-                <span>Dashboard</span>
-            </a>
-        </li>
-        <li <?php echo ($current_page == 'add_product.php') ? 'class="active"' : ''; ?>>
-            <a href="add_product.php">
-                <span>Add Product</span>
-            </a>
-        </li>
-        <li <?php echo ($current_page == 'add_admin.php') ? 'class="active"' : ''; ?>>
-            <a href="add_admin.php">
-                <span>Add Admin</span>
-            </a>
-        </li>
+    <div class="panel-container">
         
-        <!-- Link back to the main user panel -->
-        <li>
-            <a href="user_panel.php">
-                <span>User Panel</span>
-            </a>
-        </li>
-        <li>
-            <a href="logout.php">
-                <span>Logout</span>
-            </a>
-        </li>
-    </ul>
-</nav>
+        <?php 
+        // =======================================
+        // 2. INCLUDE SIDEBAR (safe include)
+        // =======================================
+        // This includes the admin_header.php file
+        $header_path = __DIR__ . '/admin_header.php';
+        if (file_exists($header_path)) {
+            include $header_path;
+        } else {
+            echo "<p class='error-message'>Error: admin_header.php not found. Sidebar is missing.</p>";
+        }
+        ?>
 
-    </body>
+        <!-- ======================================= -->
+        <!-- 3. MAIN CONTENT -->
+        <!-- ======================================= -->
+        <main class="content">
+            <div class="header">
+                <h1>Admin Dashboard</h1>
+                <span>Welcome back, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Admin'); ?>!</span>
+            </div>
+
+            <?php if (isset($db_error)): ?>
+                <div class="message error-message">Database error: <?php echo htmlspecialchars($db_error); ?></div>
+            <?php endif; ?>
+
+            <!-- Dashboard Stats Cards -->
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Total Users</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="stat-number"><?php echo $total_users; ?></p>
+                        <p class="stat-label">Registered users</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Total Products</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="stat-number"><?php echo $total_products; ?></p>
+                        <p class="stat-label">Products in database</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Products Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Recent Products</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($products)): ?>
+                                <tr>
+                                    <td colspan="4">No products found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($products as $product): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($product['id']); ?></td>
+                                        <td><?php echo htmlspecialchars($product['name']); ?></td>
+                                        <td><?php echo htmlspecialchars($product['category']); ?></td>
+                                        <td>
+                                            <a href="product_details.php?id=<?php echo $product['id']; ?>" class="btn btn-small btn-secondary">View</a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Users Table -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3>Recent Users</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                             <?php if (empty($users)): ?>
+                                <tr>
+                                    <td colspan="4">No users found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($users as $user): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($user['id']); ?></td>
+                                        <td><?php echo htmlspecialchars($user['name']); ?></td>
+                                        <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                        <td>
+                                            <a href="remove_user_action.php?id=<?php echo $user['id']; ?>" 
+                                               class="btn btn-small btn-danger" 
+                                               onclick="return confirm('Are you sure you want to remove this user?');">
+                                               Remove
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+</body>
 </html>
