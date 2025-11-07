@@ -14,19 +14,19 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <ul class="nav-links">
         <li <?php echo ($current_page == 'admin_panel.php') ? 'class="active"' : ''; ?>>
             <a href="admin_panel.php">
-                <span class="icon">?</span> <!-- Placeholder for icon -->
+                <span class="icon">🛠</span> <!-- Placeholder for icon -->
                 <span>Dashboard</span>
             </a>
         </li>
         <li <?php echo ($current_page == 'add_product.php') ? 'class="active"' : ''; ?>>
             <a href="add_product.php">
-                <span class="icon">+</span> <!-- Placeholder for icon -->
+                <span class="icon">➕</span> <!-- Placeholder for icon -->
                 <span>Add Product</span>
             </a>
         </li>
         <li <?php echo ($current_page == 'add_admin.php') ? 'class="active"' : ''; ?>>
             <a href="add_admin.php">
-                <span class="icon">?</span> <!-- Placeholder for icon -->
+                <span class="icon">👨🏻‍💻</span> <!-- Placeholder for icon -->
                 <span>Add Admin</span>
             </a>
         </li>
@@ -36,13 +36,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <ul class="nav-links bottom-links">
         <li>
             <a href="user_panel.php">
-                <span class="icon">?</span> <!-- Placeholder for icon -->
+                <span class="icon">🎛️</span> <!-- Placeholder for icon -->
                 <span>View User Panel</span>
             </a>
         </li>
         <li>
             <a href="logout.php">
-                <span class="icon">?</span> <!-- Placeholder for icon -->
+                <span class="icon">🔒</span> <!-- Placeholder for icon -->
                 <span>Logout</span>
             </a>
         </li>
